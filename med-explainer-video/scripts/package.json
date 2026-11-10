@@ -1,0 +1,10 @@
+{
+  "name": "med-explainer-video-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "医学科普动画短片流水线的渲染端（无头浏览器逐帧渲染）",
+  "dependencies": {
+    "puppeteer-core": "^23.11.1"
+  },
+  "license": "MIT"
+}

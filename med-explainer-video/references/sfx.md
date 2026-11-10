@@ -1,0 +1,34 @@
+# 音效库（`tools/sfx.py`，程序合成，不用外部素材）
+
+`mix.py` 从这里取音效；storyboard.audio.sfx 条目：
+```json
+{"scene": "s08", "cue": "deny", "dt": 1.6, "sfx": "snore", "gain": 0.35, "params": {"cycles": 2}}
+{"scene": "s08", "cue": "deny", "dt": 9.4, "sfx": "gasp", "gain": 0.3}
+{"scene": "s01", "at": 0.1, "sfx": "tick", "gain": 0.08, "every": 1.0, "until_cue": "bath"}
+{"scene": "s08", "cue": "laser", "sfx": "zap", "gain": 0.022, "every": 0.45, "count": 5}
+```
+`cue` 或 `at`（场内秒）定时刻，`dt` 偏移；`every + count` 重复 N 次，`every + until_cue/until` 重复到某时刻；`params` 原样传给音效函数。响度：函数输出峰值约 0.3–0.8，最终响度由 `gain` 定；人声段照常闪避（`sfx_duck`），字卡 `pop` 与转场 `splash` 由 mix.py 自动加。放音效避开话头话尾（cue 多半在字上，用 `dt` 挪开 ≥ 0.2 s）。试听：`python "$SKILL/scripts/tools/sfx.py" demo`（`render/sfx_demo/`，gain 0.5，比混音里响）。
+
+| kind | 声音 | 时长 | 建议 gain | params | 用途 / 备注 |
+|---|---|---|---|---|---|
+| pop | 字卡弹出“啵” | 0.12 s | 0.045（mix 自动） | — | 每张字卡 |
+| splash | 水浪 | 0.8 s | 0.12（mix 自动） | — | 转场；最后一场不加 |
+| thud | 落地闷响 | 0.3 s | 0.2–0.25 | — | 重物落下、坐下 |
+| zap | 激光 / 电流 | 0.5 s | 0.02–0.03 | — | 激光剜除 |
+| crack | 碎裂 | 0.6 s | 0.15 | — | 结石碎、东西裂 |
+| boing | 弹簧 | 0.35 s | 0.1–0.12 | — | 弹起、夸张反应 |
+| chime | 提示铃（三音） | 1.0 s | 0.08–0.12 | — | 要点、好消息 |
+| siren | 警报（双音交替） | 2.4 s | 0.025 | `dur` | 救护车、危险信号 |
+| tick | 钟表“嗒” | 0.03 s | 0.08 | — | 配 `every 1.0` 走表 |
+| plip | 水滴 | 0.18 s | 0.1 | — | 滴水、点滴 |
+| hiss | 蒸汽 / 喷雾 | 1.4 s | 0.035 | `dur` | 水蒸气消融 |
+| wind | 风 | 2.5 s | 0.05 | `dur` | 受凉、夜晚 |
+| clink | 金属碰 | 0.6 s | 0.05–0.1 | — | 器械、杯子 |
+| chirp | 鸟鸣 / 电子叫 | 0.25 s | 0.05 | — | 清晨、提示 |
+| **flush** | 马桶冲水：拉杆咔哒 + 冲 → 湍流水声 + 漩涡（谐振 1100→340 Hz 下扫）+ 低频轰鸣 + 咕咚 → 回落、滴水 → 水箱注水细丝 + 水位上升的空腔音慢慢淡出 | 4.4 s（`dur` 3.0 + `tail` 1.4） | 0.18–0.25 | `dur`、`tail` | 起夜、泡沫尿、PSA 各集 |
+| **snore** | 老年男性打鼾：吸气带鼾（悬雍垂扑动 24–30 Hz 脉冲串、420 / 1000 Hz 咽腔共鸣 + 气流）+ 轻呼气（气流 + 哼鸣）+ 停顿；每轮约 3.1 s，速率/时长略随机 | 3.1 s × cycles | 0.3–0.4 | `cycles`（默认 1）、`pitch` | 夜尿集 s08 手机录音；也可 `every 3.2 + count` |
+| **gasp** | 憋气后猛吸一口（气道上扫共振 + 短促“呃”）→ 再喘两下、一次比一次轻 | 1.46 s | 0.25–0.35 | — | 憋醒；前面的静默由 cue/dt 安排 |
+
+新三种的试听（gain 0.5）：flush 4.4 s −26.9 LUFS / 峰 −6.8 dBFS、snore ×3 9.3 s −32.9 / −10.4（含停顿）、gasp 1.46 s −29.1 / −9.1；对照 splash −23.5 / −8.4、wind −23.6 / −6.3、hiss −17.3 / −6.6。Gemini 听后的客观描述在 `render/sfx_demo/gemini_描述.md`（只描述不打分）：三轮调整后，连播的四段顺序与音色全部被认出；单听仍说冲水少了翻滚气泡与管道共鸣、呼噜偏干涩、猛喘后两声偏轻——专题里可用 gain / params 再调，或在 sfx.py 继续改。
+
+加新音效：在 `tools/sfx.py` 写函数（返回 48 kHz float 数组，峰值归一到 0.3–0.8）、登记进 `SFX` 字典、本表加一行；`python "$SKILL/scripts/tools/sfx.py" demo` 出试听，`python3 tools/hear.py <wav> --like "…"` 让 Gemini 描述。旧专题混音不受影响（同一个 rng 种子与调用顺序；bph_on_template 横屏 mix.wav 逐位比对为证）。

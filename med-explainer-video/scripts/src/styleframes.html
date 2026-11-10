@@ -1,0 +1,56 @@
+<!doctype html><meta charset="utf-8"><title>loading</title>
+<style>html,body{margin:0;background:#111}canvas{display:block}</style>
+<canvas id="cv" width="1080" height="1920"></canvas>
+<script src="sketch.js"></script><script src="lib.js"></script><script src="anat.js"></script><script src="props.js"></script><script src="shots.js"></script><script src="overlay.js"></script>
+<script>
+// S3 样帧（设计期工具，不在 pipeline 流水线内）：把候选角色图（或已矢量化的木偶）+ 正式叠字层按 layout.json 的版式拼成整屏画面，供定风格 / 定字体 / 看版式。
+//   node tools/shot.js "src/styleframes.html?f=1&sb=../design/storyboard_x.json" render/styleframe_1.png
+//   ?f=1 角色排排站 + 2 张字卡 + 角色字幕（名牌）；?f=2 危险信号场：4 张 compact 字卡 + 警报底；?f=3 片名 + big 大标题卡 + 解剖占位
+//   ?pick=laozhang:laozhang_v1_c2,wife:wife_v1_c1 选候选图（默认 storyboard.characters[who].art）；?layout=../layout_alt.json 换一套版式/字体做 A/B
+'use strict';
+(async () => {
+  const q = new URLSearchParams(location.search);
+  const SB = await (await fetch(q.get('sb') || '../design/storyboard.json')).json(); L.init(SB.style.palette); const p = L.P;
+  const LAYOUT = await (await fetch(q.get('layout') || '../layout.json')).json(); OV.setLayout(LAYOUT); OV.setStoryboard(SB);
+  for (const [name, f] of Object.entries((LAYOUT.fonts && LAYOUT.fonts.files) || {})) document.fonts.add(new FontFace(name, `url(../${f.src})`, { weight: f.weight || '400' }));
+  await Promise.all([...document.fonts].map((f) => f.load()));
+  SK.mode = 'hand'; SK.on = false; L.ART = typeof PUP !== 'undefined' && PUP.ready();
+  const F = +(q.get('f') || 1), W = 1080, H = 1920, c = document.getElementById('cv').getContext('2d'), Lt = OV.LAYOUT;
+  // 候选图是白底：从四边做洪泛，把与边缘连通的近白像素设为透明（角色内部的白色保留）
+  const cut = async (src) => { const im = new Image(); im.src = src; await im.decode();
+    const k = document.createElement('canvas'); k.width = im.width; k.height = im.height; const x = k.getContext('2d'); x.drawImage(im, 0, 0);
+    const d = x.getImageData(0, 0, k.width, k.height), a = d.data, Wi = k.width, Hi = k.height, seen = new Uint8Array(Wi * Hi), st = [];
+    const white = (i) => a[i * 4] > 236 && a[i * 4 + 1] > 236 && a[i * 4 + 2] > 236;
+    for (let i = 0; i < Wi; i++) st.push(i, (Hi - 1) * Wi + i); for (let j = 0; j < Hi; j++) st.push(j * Wi, j * Wi + Wi - 1);
+    while (st.length) { const i = st.pop(); if (seen[i] || !white(i)) continue; seen[i] = 1; a[i * 4 + 3] = 0; const xx = i % Wi, yy = (i / Wi) | 0; if (xx > 0) st.push(i - 1); if (xx < Wi - 1) st.push(i + 1); if (yy > 0) st.push(i - Wi); if (yy < Hi - 1) st.push(i + Wi); }
+    x.putImageData(d, 0, 0); return k; };
+  const picks = Object.fromEntries((q.get('pick') || '').split(',').filter(Boolean).map((s) => s.split(':')));
+  const who = Object.keys(SB.characters).filter((k) => k !== 'narrator');
+  const IM = {}; for (const w of who) { const name = picks[w]; const src = name ? `../assets/lib/characters/${w}/${name}.png` : SB.characters[w].art ? '../' + SB.characters[w].art : null; if (src) { try { IM[w] = await cut(src); } catch (e) { console.warn('no art', w, src); } } }
+  const img = (im, x, y, h) => { if (!im) return; const w = h * im.width / im.height; c.drawImage(im, x - w / 2, y - h, w, h); };
+  // 舞台映射与 engine 一致（design_top–design_bottom → 底边对齐 stage.bottom）
+  const k = Lt.stage.scale == null || Lt.stage.scale === 'fit' ? (Lt.stage.bottom - Lt.stage.top) / (Lt.stage.design_bottom - Lt.stage.design_top) : +Lt.stage.scale || 1;
+  const stage = (fn) => { c.save(); c.translate(W / 2, Lt.stage.bottom); c.scale(k, k); c.translate(-W / 2, -Lt.stage.design_bottom); fn(); c.restore(); };
+  const TL = { cover: 0, chapters: SB.chapters.map((ch, i) => ({ node: ch.node, start: i * 10, end: i * 10 + 10 })) };
+  const lines = SB.scenes.flatMap((s) => s.lines), labs = SB.scenes.flatMap((s) => s.labels || []);
+  const sub = (ln, T) => OV.subtitle(c, { id: 'sf', start: 0, lines: [{ who: ln.who, start: 0, chunks: [{ text: ln.text.replace(/[，。；：！？、“”]/g, ' ').trim().split(' ')[0].slice(0, Lt.subtitle.max_chars), start: 0, end: 5 }] }] }, T, T);
+  const labels = (arr, maxN, T) => OV.labels(c, { id: 'sf', start: 0, max_labels: maxN, labels: arr.map((l, i) => ({ ...l, t: i * 0.01 })) }, T, T);
+  if (F === 1) {   // 角色排排站 + 2 张字卡 + 角色字幕
+    stage(() => { L.bg(c, W, H, p.paper, p.paper2, 3, 0); L.fillRR(c, 60, 1180, 960, 56, 28, L.alpha(p.stone || '#D9B98F', 0.42));
+      who.forEach((w, i) => img(IM[w], 200 + i * (680 / Math.max(1, who.length - 1)), 1200, 760)); });
+    OV.header(c, SB, TL, 12); OV.aiTag(c, 1, TL); labels(labs.filter((l) => !l.big).slice(0, 2), Lt.labels.max_default, 9);
+    const ln = lines.find((l) => l.who !== 'narrator') || lines[0]; if (ln) sub(ln, 1);
+  } else if (F === 2) {   // 危险信号场：4 张 compact 字卡 + 警报底，人物脚底 ≤ 1180
+    stage(() => { L.bg(c, W, H, p.paper, p.paper2, 11, 0); c.save(); c.globalAlpha = 0.18; c.fillStyle = p.red; c.fillRect(-300, -300, W + 600, H + 600); c.restore();
+      for (let i = 0; i < 4; i++) PR.alert(c, 250 + i * 200, 560, 0.9, { t: 0 }); img(IM[who[0]], 760, 1180, 620); });
+    OV.header(c, SB, TL, 25); const rf = SB.red_flags.slice(0, 4).map((t) => ({ text: t.replace(/（.*?）/g, ''), alert: true })); labels(rf, 4, 9);
+    const ln = lines.find((l) => l.who === 'narrator') || lines[0]; if (ln) sub(ln, 1);
+  } else {   // 片名（开场 5 s）+ big 大标题卡 + 解剖占位
+    stage(() => { L.bg(c, W, H, p.paper, p.paper2, 7, 0); (AN.placeholder || (() => {}))(c, 540, 760, 1); img(IM[who[0]], 820, 1200, 560); });
+    OV.header(c, SB, TL, 2); OV.title(c, SB, TL, 2); OV.aiTag(c, 2, TL);
+    const big = labs.find((l) => l.big) || { text: SB.title_card.sub || '大标题卡', big: true }; labels([big, ...labs.filter((l) => !l.big).slice(0, 1)], Lt.labels.max_default, 9);
+    const ln = lines.find((l) => l.who === 'narrator') || lines[0]; if (ln) sub(ln, 1);
+  }
+  document.title = 'ready';
+})();
+</script>

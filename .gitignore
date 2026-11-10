@@ -1,0 +1,7 @@
+med-explainer-video/scripts/bin/
+med-explainer-video/scripts/node_modules/
+__pycache__/
+.DS_Store
+*.zip
+样例预演_无声.mp4
+上架前清单.md

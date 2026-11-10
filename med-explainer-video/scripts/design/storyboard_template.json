@@ -1,0 +1,288 @@
+{
+ "project": "template",
+ "title": "（片名待定）",
+ "title_card": {
+  "main": "（片名）",
+  "sub": "（副标题）"
+ },
+ "version": "0.1",
+ "status": {
+  "_comment": "三个 HARD 检查点，pipeline.py 只认这里：confirmed 为 true 才往下跑。确认时写 by / date / note（谁、哪天、原话）。由用户确认，AI 不得替用户改成 true。",
+  "s0": {
+   "confirmed": false,
+   "by": null,
+   "date": null,
+   "note": null
+  },
+  "s3": {
+   "confirmed": false,
+   "by": null,
+   "date": null,
+   "note": null
+  },
+  "s6a": {
+   "confirmed": false,
+   "by": null,
+   "date": null,
+   "note": null
+  }
+ },
+ "fps": 30,
+ "width": 1080,
+ "height": 1920,
+ "target_seconds": 60,
+ "_characters_note": "art3d = 3D 卡通定妆图（S3 用平台生图出）：必须全身（头顶到鞋底完整）、正面或 3/4 侧、自然站姿、纯色浅背景、不带场景、无文字；衣服鞋子在这张定死，之后每张姿势图都拿它当长相参考。",
+ "characters": {
+  "narrator": {
+   "name": "旁白",
+   "desc": "不出镜；亲切、专业的口吻"
+  },
+  "role1": {
+   "name": "（角色名）",
+   "desc": "（年龄、身份、性格；在片中承担什么）",
+   "color": "#4F6C99",
+   "art3d": "assets/lib/characters/role1/role1_v1_c1.png"
+  }
+ },
+ "places": {
+  "_comment": "场景定妆图（S3 和角色一起定稿，永不覆盖，改动升版本）：每个反复出现的地点一张空场景图（无人物、无文字、同一画风、竖版 9:16、机位与人物镜头一致）。scenes[].place 引用这里的键；出某场的姿势图时把它和角色定妆图一起当参考图（references/characters_3d.md）。",
+  "place1": {
+   "name": "（地点名）",
+   "desc": "（陈设、布局、光线、机位）",
+   "art": "assets/lib/scenes/place1/place1_v1_c1.png"
+  }
+ },
+ "claims": [
+  {
+   "id": "P1",
+   "text": "（口径表：每条医学表述一行，照来源原文写；台词和字卡只能比它更简略，不能更绝对）",
+   "src": "S1",
+   "quote": "（来源里对应的原句，便于用户核对）"
+  }
+ ],
+ "red_flags": [
+  "危险信号一（按来源原文改写）",
+  "危险信号二（按来源原文改写）"
+ ],
+ "red_flags_action": "（出现后怎么办：哪些立即急诊、哪些尽快就医，按来源写）",
+ "sources": {
+  "_comment": "按选题检索到的权威来源（references/sources.md）：每条写清名称、发布机构、版本或年份、网址或书目、检索日期；用户提供的资料也登记在这里",
+  "S1": "（来源名称，发布机构，年份 / 版本，网址，检索日期）"
+ },
+ "disclaimer": "本片仅供科普，不能替代医生面诊",
+ "outro": {
+  "slogan": "（片尾口号，例：早发现 • 早就医）",
+  "ai_note": "角色形象与道具图标由 AI 生成",
+  "references": [
+   "参考：（来源名称、版本、年份）"
+  ]
+ },
+ "credits": [
+  "作者：（你的署名或账号名）"
+ ],
+ "anatomy_checks": [
+  "（解剖核对清单：每张出图都要过；写具体到“谁在谁的正下方、从哪穿过”）"
+ ],
+ "anatomy_masters": [],
+ "chapters": [
+  {
+   "id": "c0",
+   "node": "开场",
+   "scenes": [
+    "s01"
+   ]
+  },
+  {
+   "id": "c1",
+   "node": "危险信号",
+   "scenes": [
+    "s02"
+   ]
+  }
+ ],
+ "scenes": [
+  {
+   "id": "s01",
+   "chapter": "c0",
+   "beat": "（这场讲什么）",
+   "hook": "（抓人点）",
+   "claims": [
+    "P1"
+   ],
+   "visual": "（画面要素与出场顺序；不画什么）",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "这里写开场旁白，用一个观众熟悉的生活场景开头。",
+     "emo": "intrigued"
+    },
+    {
+     "who": "role1",
+     "text": "这里写角色的第一句台词。",
+     "emo": "light",
+     "hold": 0.2
+    }
+   ],
+   "labels": [
+    {
+     "at": [
+      0,
+      "熟悉"
+     ],
+     "text": "第一张字卡"
+    },
+    {
+     "at": [
+      1,
+      "台词"
+     ],
+     "text": "大字卡写核心概念",
+     "big": true
+    }
+   ],
+   "cues": {
+    "enter": [
+     1,
+     "角色"
+    ]
+   },
+   "lead": 0.4,
+   "place": "place1"
+  },
+  {
+   "id": "s02",
+   "chapter": "c1",
+   "beat": "危险信号：每条一张 alert 字卡",
+   "hook": "红色警报",
+   "claims": [
+    "P1"
+   ],
+   "visual": "警报红闪；每条危险信号落下一块警示牌（图形，无文字），主体放舞台上半部。",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "出现下面的情况要马上就医：危险信号一，或者危险信号二。",
+     "emo": "urgent",
+     "hold": 0.4
+    }
+   ],
+   "labels": [
+    {
+     "at": [
+      0,
+      "信号一"
+     ],
+     "text": "危险信号一：立即就医",
+     "alert": true,
+     "rf": 0
+    },
+    {
+     "at": [
+      0,
+      "信号二"
+     ],
+     "text": "危险信号二：立即就医",
+     "alert": true,
+     "rf": 1
+    }
+   ],
+   "cues": {
+    "f1": [
+     0,
+     "信号一"
+    ],
+    "f2": [
+     0,
+     "信号二"
+    ]
+   },
+   "lead": 0.3,
+   "tail": 2.0
+  }
+ ],
+ "timing": {
+  "lead": 0.26,
+  "tail": 0.36,
+  "outro": 5.0,
+  "gap_same": 0.12,
+  "gap_switch": 0.28,
+  "est_chars_per_s": 5.0
+ },
+ "qa": {
+  "red_flags_match": "strict",
+  "dips_ok": [],
+  "_note": "QA 门的专题设置（tools/qa.py）。red_flags_match：strict = 危险信号逐卡匹配（每条去掉括号注释和连接词后的前 4 个字要在同一张卡里按顺序出现；字卡写 \"rf\": 危险信号下标 可显式关联），compat（不写时的缺省，旧专题用）= 逐卡找不到、旧规则（前 4 个汉字在全部字卡拼接里）找得到只警告，legacy = 只用旧规则。dips_ok：有意的暗场（关灯、闪电、闭眼）白名单，[{\"scene\": \"s04\", \"t\": 3.2, \"why\": \"关灯\"}] / {\"scene\", \"cue\", \"dt\"} / {\"scene\"} 整场 / {\"T\": 绝对秒}，每条写 why；不在白名单的暗谷：换镜处（前后画面不同）判失败，镜头内的明暗变化（前后同一画面）和场景水浪转场窗口（场界 ±0.4 s）里的只警告（tools/dipscan.py）。asr_min：逐句回读拼音相似度门限（缺省 0.97）；asr_hallucinations：整片回读里要删的幻听句（台词里没有的），模板已内置“请不吝点赞 / 订阅 / 转发 / 谢谢观看…”。"
+ },
+ "subtitle_numbers": [],
+ "style": {
+  "name": "扁平元素风（暖色纸底）",
+  "palette": {
+   "paper": "#FFF4E2",
+   "paper2": "#FFE7C7",
+   "ink": "#3B2F4A",
+   "ink2": "#6E6178",
+   "white": "#FFFDF8",
+   "night": "#2E3558",
+   "night2": "#3D4772",
+   "moon": "#FFE9A8",
+   "red": "#F0605D",
+   "red_dark": "#C83C3A",
+   "water": "#7CC8E8",
+   "water_dark": "#3E9BC6",
+   "stone": "#D9B98F",
+   "skin": "#F6D3B5",
+   "pants": "#4B5570",
+   "urine": "#FFE07A",
+   "urine_dark": "#E6B93C",
+   "green": "#7FBF7B",
+   "yellow": "#FFD45E",
+   "grey": "#B8B2BC",
+   "steam_blue": "#CFEFFF",
+   "laser": "#FF5A36"
+  }
+ },
+ "voices": {
+  "_comment": "配音由用户自己录（tools/voice.py）：actor = 谁来配；desc = 嗓音和语气要求（写进台词本）",
+  "narrator": {
+   "actor": "（待定）",
+   "desc": "亲切、专业，吐字清楚，约每秒 4.5 字"
+  },
+  "role1": {
+   "actor": "（待定）",
+   "desc": "（嗓音和语气要求）"
+  }
+ },
+ "tts": {
+  "asr_prompt": "医学科普。",
+  "_asr_prompt_note": "录音回读（whisper）的提示词只写领域，不写目标词（写了会把读对的字硬改）",
+  "must": {},
+  "_must_note": "必须读对的关键词带调拼音，如 {\"s08_0\": [\"wan1 chu2\"]}：回读里少了就判不过",
+  "min_pinyin": 0.92,
+  "_min_pinyin_note": "回读与台词的无调拼音相似度门限",
+  "ear_confirmed": [],
+  "_ear_note": "回读没过、但人耳听过没问题的句子 id（如 \"s03_2\"）",
+  "emo_notes": {},
+  "_emo_note": "语气词 → 写进台词本的表演提示（模板有默认表，见 tools/_common.py emo_notes）"
+ },
+ "design": {
+  "doc": "design/设计方案_v1.md",
+  "say_overrides": {},
+  "say_overrides_why": "读音提示：原字 → 同音字（如 长→涨），台词本里会标出这个字的读音；字幕仍用原字"
+ },
+ "audio": {
+  "bgm": {
+   "bpm": 104,
+   "minor": [],
+   "quiet": []
+  },
+  "_bgm_note": "minor/quiet 都是 [场, 起cue或null, 止cue或null] 的区间；null 表示场首/场尾",
+  "sfx": [],
+  "_sfx_note": "[{\"scene\":\"s02\",\"cue\":\"f1\",\"dt\":0.1,\"sfx\":\"thud\",\"gain\":0.22}]；sfx 名见 tools/mix.py 的 SFX 库"
+ },
+ "cover": null,
+ "_cover_note": "要封面就写 {\"hold\": 2.0, \"title_lines\": [...], \"hook\": \"...\", \"tagline\": \"...\", \"ai_tag\": \"AI 生成内容\"} 并在 scenes.js 写 SC.cover；成片第一帧即封面",
+ "_media_note": "scenes[].media[] 视频 / 帧序列素材（intro_media / outro_media 同）：{id, src: \"assets/.../f_%04d.jpg\", frames, fps, at: [cue, 偏移], dur, loop, still}；人物默认用 3D 静帧立绘（storyboard.assets 登记 sp_*，scenes.js 用 SH.SP 画）。",
+ "_credits_note": "片尾署名，每条一行；可写 {\"text\": \"...\", \"orient\": \"port\"|\"land\"} 只在某一画幅显示",
+ "_anatomy_masters": "可选：工作目录 anatomy/ 解剖库里要复用的画法（references/anatomy.md）；不用就留空，直接在专题 src/anat.js 里画",
+ "_subtitle_numbers_note": "字幕里要显示成阿拉伯数字的词：[[\"六十岁\", \"60岁\"]]"
+}

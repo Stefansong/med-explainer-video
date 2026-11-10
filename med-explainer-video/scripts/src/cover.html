@@ -1,0 +1,26 @@
+<!doctype html><meta charset="utf-8"><title>loading</title>
+<style>html,body{margin:0;background:#111;height:100%}canvas{display:block;max-width:100vw;max-height:100vh;margin:auto}</style>
+<canvas id="cv" width="1080" height="1920"></canvas>
+<script src="sketch.js"></script><script src="lib.js"></script><script src="anat.js"></script><script src="props.js"></script><script src="shots.js"></script><script src="scenes.js"></script><script src="overlay.js"></script><script src="cover_default.js"></script><script src="engine.js"></script>
+<script>
+// 封面导出页：与成片第一帧 s00 同一段代码——项目 scenes.js 的 SC.cover（竖屏）/ SC.cover_land（横屏），没有就用模板默认 COVER.port / COVER.land（cover_default.js）；文字来自 storyboard.cover。
+// AI 标识也按 layout.ai_mark 叠上（T=0，与视频第 0 帧一致；?mark=0 不叠）。
+//   node tools/shot.js "src/cover.html?sb=../design/storyboard_x.json" render/x_cover_9x16.png                   竖屏 1080×1920；加 ?crop=3x4 取中间 1080×1440
+//   node tools/shot.js "src/cover.html?sb=../design/storyboard_x.json&orient=land" render/land/x_cover_16x9.png 1920 1080   横屏 1920×1080（版式 ../layout_land.json）
+(async () => {
+  const q = new URLSearchParams(location.search), land = q.get('orient') === 'land';
+  const SB = await (await fetch(q.get('sb') || '../design/storyboard.json')).json();
+  const LAYOUT = await (await fetch(q.get('layout') || (land ? '../layout_land.json' : '../layout.json'))).json(); OV.setLayout(LAYOUT); OV.setStoryboard(SB);
+  for (const [name, f] of Object.entries((LAYOUT.fonts && LAYOUT.fonts.files) || {})) { document.fonts.add(new FontFace(name, `url(../${f.src})`, { weight: f.weight || '400' })); }
+  await Promise.all([...document.fonts].map((f) => f.load()));
+  L.init(SB.style.palette); SK.mode = 'hand'; SK.on = false; L.ART = typeof PUP !== 'undefined' && PUP.ready();
+  const cv = document.getElementById('cv'); cv.width = LAYOUT.width || (land ? 1920 : 1080); cv.height = LAYOUT.height || (land ? 1080 : 1920); const c = cv.getContext('2d');
+  const fn = land ? (SC.cover_land || COVER.land) : (SC.cover || COVER.port);
+  const IM = {}; await Promise.all(Object.entries(SB.assets || {}).map(([id, a]) => { const im = new Image(); im.src = '../' + a.src; return im.decode().then(() => { IM[id] = im; }).catch(() => {}); }));   // 封面上的 3D 立绘等图片（storyboard assets）
+  const draw = (ctx) => { L.EXT = null; fn(ctx, SB, { land, img: (id) => IM[id] || null, t: 0 }); if (q.get('mark') !== '0') OV.aiMark(ctx, 0, null); };
+  if (!land && q.get('crop') === '3x4') { const off = document.createElement('canvas'); off.width = 1080; off.height = 1920; draw(off.getContext('2d')); cv.height = 1440; c.drawImage(off, 0, 240, 1080, 1440, 0, 0, 1080, 1440); }
+  else draw(c);
+  window.AIMARK = OV.lastAiMark; window.COVER_FN = SC.cover_land || SC.cover ? 'project' : 'template_default';
+  document.title = 'ready';
+})();
+</script>

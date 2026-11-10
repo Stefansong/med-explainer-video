@@ -1,0 +1,39 @@
+name: smoke
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Test-only dependency (synthetic recordings)
+        run: python -m pip install edge-tts
+      - name: Smoke test
+        env:
+          PYTHONUTF8: '1'
+          SMOKE_DIR: ${{ runner.temp }}/smoke
+        run: python tests/smoke.py
+      - name: Upload result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-${{ matrix.os }}
+          path: |
+            ${{ runner.temp }}/smoke/demo/render/*.mp4
+            ${{ runner.temp }}/smoke/demo/render/*.json
+            ${{ runner.temp }}/smoke/demo/render/*_sheet.png
+            ${{ runner.temp }}/smoke/demo/render/pipeline.log
+            ${{ runner.temp }}/smoke/demo/audio/lines/lines.json
+          if-no-files-found: warn

@@ -1,0 +1,200 @@
+{
+ "version": "land-v1 (2026-10-21)",
+ "_comment": "横屏 1920×1080 投稿版版式（中华护理杂志社健康科普作品平台）。数值从 bph 交付版抄来（bph/src/overlay.js OV.LAYOUTS.land、board2 要点板、navLock 章节导航、refs 文献页）。ORIENT=land 时 tools/_common 自动选本文件，产物写 render/land/；改版式只改这里，不改代码。",
+ "orient": "land",
+ "width": 1920,
+ "height": 1080,
+ "safe_area_verified": true,
+ "_safe_note": "横屏在网页播放器里看，没有抖音那种右侧按钮栏；safe.right_x 设为画幅宽，不触发 safe_right",
+ "top_reserved": [
+  0,
+  0
+ ],
+ "header": {
+  "style": "nav",
+  "_comment": "顶部章节导航代替常驻片名：只列 chapters[].nav !== false 的章；当前章蓝底白字 + 章内进度细线，讲过的蓝字，没讲到的灰字；封面过后逐个弹入",
+  "x": 60,
+  "y": 62,
+  "size": 30,
+  "height": 60,
+  "pad": 52,
+  "gap": 40,
+  "connector": 24,
+  "pop_start": 0.25,
+  "pop_each": 0.12,
+  "pop_seconds": 0.42
+ },
+ "title": {
+  "enabled": false,
+  "_comment": "横屏不常驻片名（片名在封面上；正片顶部是章节导航）"
+ },
+ "stage": {
+  "x": 60,
+  "y": 104,
+  "h": 880,
+  "design_top": 236,
+  "design_bottom": 1236,
+  "design_width": 1080,
+  "_comment": "场景仍按竖屏舞台 1080 宽、y 236–1236 设计；横屏把它映射到左侧 (x 60, y 104, 高 880) 的矩形（k = 0.88），以舞台中心呼吸；背景向右延伸铺满整幅（lib.js L.EXT，竖屏不受影响）"
+ },
+ "ai_mark": {
+  "text": "人工智能生成合成",
+  "min_ratio": 0.05,
+  "margin_px": 4,
+  "from": 0,
+  "show_seconds": 3.0,
+  "fade_out": 0.5,
+  "anchor": "bottom_right",
+  "right": 1880,
+  "bottom": 1040,
+  "_comment": "GB 45438—2025 / 投稿须知：起始画面右下角“人工智能生成合成”，文字高 ≥ 短边 5%（1080×5% = 54 px，+4 余量 = 58），从第 0 帧起 ≥ 2 s；封面 hold_land 默认 3.0 s"
+ },
+ "labels": {
+  "style": "board",
+  "_comment": "D 改良要点板（bph 10-20 用户选定）：一块白板浮在右侧，板头 = 本场主题 scene.topic（蓝底）或本场最近一张 big 卡（红底）；条目按满格高度居中到 center_y；同屏格数 = (scene.max_labels || max_default) + extra_rows；超出时最老的淡出、其余上移",
+  "x": 1110,
+  "width": 760,
+  "head_height": 82,
+  "row_height": 82,
+  "pad": 16,
+  "radius": 28,
+  "center_y": 544,
+  "top_min": 150,
+  "max_default": 3,
+  "extra_rows": 2,
+  "max_on_screen": null,
+  "min_stay": 2.5,
+  "min_stay_alert": 3.5,
+  "max_text_chars": 18,
+  "head_size": 42,
+  "head_x": 34,
+  "size": 40,
+  "dot": 9,
+  "dot_x": 44,
+  "text_x": 68,
+  "text_pad_r": 32,
+  "newest_highlight_seconds": 2.4,
+  "pop": {
+   "board_seconds": 0.45,
+   "seconds": 0.4,
+   "enter_delay": 0.22,
+   "rotate_seconds": 0.3,
+   "slide": 26
+  },
+  "shadow": {
+   "alpha": 0.16,
+   "dx": 6,
+   "dy": 10
+  }
+ },
+ "subtitle": {
+  "y": 1022,
+  "size": 64,
+  "center_x": 960,
+  "max_width": 1500,
+  "max_chars": 13,
+  "name_size": 34,
+  "stroke": 0.24,
+  "lead": 0.06,
+  "tail": 0.3,
+  "_comment": "整幅居中；max_chars 与 bph 横屏交付版相同（13）"
+ },
+ "bottom_reserved": [
+  1080,
+  1080
+ ],
+ "footer": {
+  "waves": [
+   980,
+   1040
+  ],
+  "enabled": true
+ },
+ "safe": {
+  "right_x": 1920,
+  "y_from": 0,
+  "y_to": 0
+ },
+ "outro": {
+  "center_x": 1510,
+  "slogan_y": 300,
+  "slogan_size": 54,
+  "block_y": 400,
+  "disclaimer_size": 42,
+  "ai_note_size": 32,
+  "ref_size": 27,
+  "ref_line": 40,
+  "credit_size": 28,
+  "credit_line": 50,
+  "max_width": 720,
+  "fit": true,
+  "_comment": "片尾文字在右半幅（舞台右侧）居中：center_x = 1100 + (1920−1100)/2；有参考文献页（sref）时不再在片尾重复 outro.references"
+ },
+ "refs": {
+  "x": 80,
+  "width": 1760,
+  "top": 160,
+  "bottom_margin": 50,
+  "title_x": 90,
+  "title_y": 96,
+  "title_size": 46,
+  "size_max": 34,
+  "size_min": 15,
+  "line_height": 1.34,
+  "gap": 0.34,
+  "bg": "#FFF8EE",
+  "page_seconds_default": 5.0,
+  "per_page_default": 10,
+  "fade_in": 0.5,
+  "page_fade": 0.35,
+  "_comment": "参考文献页（sref 场，storyboard.references 非空且横屏时自动追加）：GB/T 7714 顺序编码，悬挂缩进，字号从 size_max 往下试到能装进 references_pages 页"
+ },
+ "fonts": {
+  "files": {
+   "HeiTiSub": {
+    "src": "assets/fonts/HanSansSC-Subset-VF.otf",
+    "weight": "250 900"
+   },
+   "DeYiHei": {
+    "src": "assets/fonts/SmileySans-Oblique.ttf",
+    "weight": "400"
+   }
+  },
+  "sub": {
+   "family": "\"HeiTiSub\"",
+   "weight": 900
+  },
+  "label": {
+   "family": "\"HeiTiSub\"",
+   "weight": 700
+  },
+  "title": {
+   "family": "\"DeYiHei\",\"HeiTiSub\"",
+   "weight": 400
+  },
+  "ref": {
+   "family": "\"HeiTiSub\"",
+   "weight": 400
+  },
+  "_comment": "投稿须知：只用开源免费商用字体（思源黑体、得意黑，SIL OFL），不回退系统字体；tools/check_fonts.py 逐字核字形覆盖，qa 门 font_fallback"
+ },
+ "qa_gate": {
+  "label_over_subtitle": 0,
+  "label_slot_collision": 0,
+  "label_below_band": 0,
+  "subtitle_shrunk": null,
+  "label_shrunk": null,
+  "safe_right": 0,
+  "font_fallback": 0
+ },
+ "submit": {
+  "target_mb": 46,
+  "max_mb": 50,
+  "fps": 30,
+  "sub": 4,
+  "min_width": 1280,
+  "min_height": 720,
+  "ai_mark_min_seconds": 2.0,
+  "_comment": "投稿版：母版 30 fps + 4 子帧运动模糊（与 bph 交付版相同）→ 两遍 libx264 压到 target_mb（平台上限 50 M）"
+ }
+}

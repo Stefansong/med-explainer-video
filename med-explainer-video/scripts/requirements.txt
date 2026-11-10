@@ -1,0 +1,11 @@
+numpy>=1.24
+scipy>=1.10
+soundfile>=0.12
+pypinyin>=0.50
+jieba>=0.42
+pillow>=10.0
+fonttools>=4.40
+filelock>=3.12
+send2trash>=1.8
+imageio-ffmpeg>=0.5
+faster-whisper>=1.1

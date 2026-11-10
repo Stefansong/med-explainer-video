@@ -1,0 +1,27 @@
+<!doctype html><meta charset="utf-8"><title>loading</title>
+<style>html,body{margin:0;background:#111;height:100%}canvas{display:block;max-width:100vw;max-height:100vh;margin:auto}</style>
+<canvas id="cv" width="1080" height="1920"></canvas>
+<script src="sketch.js"></script><script src="lib.js"></script><script src="anat.js"></script><script src="props.js"></script><script src="shots.js"></script><script src="scenes.js"></script><script src="overlay.js"></script><script src="cover_default.js"></script><script src="engine.js"></script>
+<script>
+// 预览/渲染页。页面协议（render.js / frames.js / shot.js / strip.js / crop.js / clip.js 共用）：window.renderAt(T)、window.renderFrame(T, o)、async window.prepareAt(T)、document.title === 'ready'。
+// 参数：?sb=../design/storyboard_x.json（默认 ../design/storyboard.json）、?layout=../layout.json（横屏 ../layout_land.json，画幅由它的 width/height 决定）、?tl=../render/timeline.json（横屏 ../render/land/timeline.json）、?orient=land（只决定默认 layout/tl 路径）、?style=hand|paper|…、?art=0（代码版角色）、?strict（素材缺失报错）、?t=秒（画一帧）、?play[=秒]（跟音频播放）
+(async () => {
+  const q = new URLSearchParams(location.search);
+  const SB = await (await fetch(q.get('sb') || '../design/storyboard.json')).json();
+  const land = q.get('orient') === 'land';
+  const TL = await (await fetch(q.get('tl') || (land ? '../render/land/timeline.json' : '../render/timeline.json'))).json();
+  const LAYOUT = await (await fetch(q.get('layout') || (land ? '../layout_land.json' : '../layout.json'))).json(); OV.setLayout(LAYOUT);
+  const cv = document.getElementById('cv'); cv.width = LAYOUT.width || SB.width || 1080; cv.height = LAYOUT.height || SB.height || 1920;
+  // 字体：按 layout.fonts.files 注册（路径相对项目根），加载完再渲染（否则第一帧会回退系统字体）
+  for (const [name, f] of Object.entries((LAYOUT.fonts && LAYOUT.fonts.files) || {})) { const ff = new FontFace(name, `url(../${f.src})`, { weight: f.weight || '400' }); document.fonts.add(ff); }
+  await Promise.all([...document.fonts].map((f) => f.load()));
+  window.FONTS_STATUS = [...document.fonts].map((f) => ({ family: f.family, weight: f.weight, status: f.status }));   // render.js 记进 overlay.json（投稿版：字体必须全部加载、不回退系统字体）
+  const eng = ENGINE.create({ SB, TL, canvas: cv, style: q.get('style') || '', art: q.get('art') !== '0', strict: q.has('strict') });
+  window.renderAt = eng.renderAt; window.renderFrame = eng.renderFrame; window.prepareAt = eng.prepare;   // 逐帧渲染前 await prepareAt(T)：把用到的视频帧先加载好
+  window.TL = TL; window.SB = SB; window.LAYOUT = LAYOUT; window.DUR = TL.duration;
+  window.stageToScreen = (t, x, y) => ENGINE.stageToScreen(x, y);   // crop.js --at 跟踪：舞台设计坐标 → 画布坐标
+  if (q.has('t')) { await eng.prepare(+q.get('t')); window.renderAt(+q.get('t')); }
+  if (q.has('play')) { const au = new Audio(q.get('mix') || (land ? '../render/land/mix.m4a' : '../render/mix.m4a')); document.body.onclick = () => (au.paused ? au.play() : au.pause()); if (q.get('play')) au.currentTime = +q.get('play'); const loop = () => { eng.prepare(au.currentTime + 0.25, 0.3); window.renderAt(au.currentTime); requestAnimationFrame(loop); }; loop(); }
+  document.title = 'ready';
+})();
+</script>

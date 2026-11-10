@@ -1,0 +1,480 @@
+{
+ "project": "example",
+ "title": "水喝少了，小心肾结石",
+ "title_card": {
+  "main": "水喝少了",
+  "sub": "小心肾结石"
+ },
+ "version": "0.1",
+ "status": {
+  "_comment": "三个 HARD 检查点，pipeline.py 只认这里：confirmed 为 true 才往下跑。确认时写 by / date / note（谁、哪天、原话）。由用户确认，AI 不得替用户改成 true。",
+  "s0": {
+   "confirmed": false,
+   "by": null,
+   "date": null,
+   "note": null
+  },
+  "s3": {
+   "confirmed": false,
+   "by": null,
+   "date": null,
+   "note": null
+  },
+  "s6a": {
+   "confirmed": false,
+   "by": null,
+   "date": null,
+   "note": null
+  }
+ },
+ "fps": 30,
+ "width": 1080,
+ "height": 1920,
+ "target_seconds": 45,
+ "_characters_note": "art3d = 3D 卡通定妆图（S3 用平台生图出）：必须全身（头顶到鞋底完整）、正面或 3/4 侧、自然站姿、纯色浅背景、不带场景、无文字；衣服鞋子在这张定死，之后每张姿势图都拿它当长相参考。",
+ "characters": {
+  "narrator": {
+   "name": "旁白",
+   "desc": "不出镜；亲切、专业的医生口吻"
+  },
+  "zhou": {
+   "name": "小周",
+   "desc": "三十出头的上班族，一忙起来就忘了喝水",
+   "color": "#5B8FD0",
+   "art3d": "assets/lib/characters/zhou/zhou_v1_c1.png"
+  }
+ },
+ "places": {
+  "office": {
+   "name": "办公室",
+   "desc": "傍晚的办公室，落地窗，木桌，笔记本电脑，一杯水，一盆绿植",
+   "art": "assets/lib/scenes/fs_zhou_desk.png"
+  }
+ },
+ "claims": [
+  {
+   "id": "P1",
+   "text": "尿量少、尿液浓缩是尿路结石形成的危险因素；结石由尿中晶体物质析出、聚集而成。",
+   "src": "CUA2022"
+  },
+  {
+   "id": "P2",
+   "text": "结石嵌顿在输尿管可引起肾绞痛（腰腹部剧烈疼痛）。",
+   "src": "CUA2022"
+  },
+  {
+   "id": "P3",
+   "text": "预防结石复发：增加液体摄入，使每天的尿量保持在 2.0–2.5 L 以上。",
+   "src": "CUA2022"
+  },
+  {
+   "id": "P4",
+   "text": "结石梗阻合并感染（发热、寒战），或无尿，属于急症，需要立即就医处理。",
+   "src": "CUA2022"
+  }
+ ],
+ "red_flags": [
+  "腰痛伴发热寒战",
+  "完全尿不出来"
+ ],
+ "red_flags_action": "立即去急诊",
+ "sources": {
+  "CUA2022": "黄健、张旭主编《中国泌尿外科和男科疾病诊断治疗指南（2022 版）》尿石症章节，科学出版社（样例引用：正式使用前请核对原文）"
+ },
+ "disclaimer": "本片仅供科普，不能替代医生面诊",
+ "outro": {
+  "slogan": "多喝水 • 别硬扛",
+  "ai_note": "角色形象与道具图标由 AI 生成",
+  "references": [
+   "参考：中国泌尿外科和男科疾病诊断治疗指南（2022 版）"
+  ]
+ },
+ "credits": [
+  "样例专题 · med-explainer-video"
+ ],
+ "anatomy_checks": [
+  "正面观的右肾：肾门朝向内侧（画面右侧，靠身体中线）",
+  "肾盏汇成肾盂，肾盂在肾门处移行为输尿管",
+  "输尿管自肾门向下、略向内行，进入膀胱",
+  "结石在肾盏内形成；嵌顿点画在肾盂输尿管连接处下方（输尿管上段）",
+  "梗阻以上（肾盂、肾盏）扩张，梗阻以下输尿管不扩张"
+ ],
+ "_anatomy_masters": "系列解剖库 Kepu/anatomy/ 里要用的母版（如 [\"kidney_tract_v1\", \"prostate_v2\"]）；python3 tools/anat_use.py --palette 生成 src/anat.js、补色键。新画的结构先在库里起候选母版",
+ "anatomy_masters": [],
+ "chapters": [
+  {
+   "id": "c0",
+   "node": "开场",
+   "scenes": [
+    "s01"
+   ]
+  },
+  {
+   "id": "c1",
+   "node": "认识它",
+   "scenes": [
+    "s02"
+   ]
+  },
+  {
+   "id": "c2",
+   "node": "怎么办",
+   "scenes": [
+    "s03"
+   ]
+  },
+  {
+   "id": "c3",
+   "node": "危险信号",
+   "scenes": [
+    "s04"
+   ]
+  }
+ ],
+ "scenes": [
+  {
+   "id": "s01",
+   "chapter": "c0",
+   "place": "office",
+   "beat": "冷开场：小周忙得顾不上喝水 → 腰突然疼",
+   "hook": "很多上班族都这样",
+   "claims": [],
+   "visual": "满幅 3D 镜头（办公室，桌上一杯没动过的水）缓慢推近；说到“腰”时切到纯色底 + 扶腰立绘 + 一个红色警示符号。片名在开场 5 秒内出现在舞台上部。",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "小周一忙起来，一下午都顾不上喝一口水。",
+     "emo": "intrigued"
+    },
+    {
+     "who": "zhou",
+     "text": "忙完再喝！",
+     "emo": "light"
+    },
+    {
+     "who": "narrator",
+     "text": "直到有一天，他的腰突然疼了起来。",
+     "emo": "tense",
+     "hold": 0.4
+    }
+   ],
+   "labels": [
+    {
+     "at": [
+      0,
+      "顾不上"
+     ],
+     "text": "久坐少喝水"
+    },
+    {
+     "at": [
+      2,
+      "腰"
+     ],
+     "text": "突发腰痛",
+     "big": true
+    }
+   ],
+   "cues": {
+    "pain": [
+     2,
+     "腰"
+    ]
+   },
+   "lead": 0.4
+  },
+  {
+   "id": "s02",
+   "chapter": "c1",
+   "beat": "结石怎么来的：尿浓 → 晶体聚集 → 卡在输尿管",
+   "hook": "把肾“切开”看",
+   "claims": [
+    "P1",
+    "P2"
+   ],
+   "visual": "代码画的右肾剖面 + 输尿管 + 膀胱。晶体小点在下肾盏聚成结石并长大；结石移到输尿管上段卡住，红色脉动，梗阻以上肾盂肾盏扩张。",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "水喝得少，尿就变浓。尿里的晶体越聚越大，就成了肾结石。",
+     "emo": "explain"
+    },
+    {
+     "who": "narrator",
+     "text": "结石掉进输尿管卡住，就会引起剧烈的腰痛。",
+     "emo": "firm",
+     "hold": 0.3
+    }
+   ],
+   "labels": [
+    {
+     "at": [
+      0,
+      "变浓"
+     ],
+     "text": "喝水少 → 尿液浓缩"
+    },
+    {
+     "at": [
+      0,
+      "肾结石"
+     ],
+     "text": "晶体聚集成结石"
+    },
+    {
+     "at": [
+      1,
+      "卡住"
+     ],
+     "text": "卡在输尿管 → 肾绞痛",
+     "big": true
+    }
+   ],
+   "cues": {
+    "grow": [
+     0,
+     "晶体"
+    ],
+    "fall": [
+     1,
+     "掉进"
+    ],
+    "stuck": [
+     1,
+     "卡住"
+    ]
+   },
+   "check_frames": [
+    "cue:grow+2.0",
+    "cue:stuck+1.2",
+    "end-0.5"
+   ],
+   "lead": 0.3
+  },
+  {
+   "id": "s03",
+   "chapter": "c2",
+   "beat": "预防：多喝水，每天尿量 2 升以上",
+   "hook": "办法很简单",
+   "claims": [
+    "P3"
+   ],
+   "visual": "左边水壶图标弹入，右边一只量杯（代码画，刻度是短线不是数字）慢慢注到“两升”那格；小周举杯立绘弹入。",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "预防结石复发，最基本的一条就是多喝水：让每天的尿量保持在两升以上。",
+     "emo": "explain"
+    },
+    {
+     "who": "zhou",
+     "text": "原来这么简单！",
+     "emo": "happy",
+     "hold": 0.3
+    }
+   ],
+   "labels": [
+    {
+     "at": [
+      0,
+      "多喝水"
+     ],
+     "text": "多喝水"
+    },
+    {
+     "at": [
+      0,
+      "两升"
+     ],
+     "text": "每天尿量 2 升以上",
+     "big": true
+    }
+   ],
+   "cues": {
+    "water": [
+     0,
+     "多喝水"
+    ],
+    "two": [
+     0,
+     "两升"
+    ],
+    "ok": [
+     1,
+     "原来"
+    ]
+   },
+   "lead": 0.3
+  },
+  {
+   "id": "s04",
+   "chapter": "c3",
+   "beat": "危险信号：两条，立即急诊",
+   "hook": "红色警报",
+   "claims": [
+    "P4"
+   ],
+   "visual": "背景转警报红闪；两块警示牌依次落下（图形叹号，无文字）。主体放舞台上半部，下面留给字卡。",
+   "lines": [
+    {
+     "who": "narrator",
+     "text": "但如果腰痛的同时发烧打寒战，或者完全尿不出来，别硬扛，马上去急诊。",
+     "emo": "urgent",
+     "hold": 0.5
+    }
+   ],
+   "labels": [
+    {
+     "at": [
+      0,
+      "发烧"
+     ],
+     "text": "腰痛伴发热寒战：立即急诊",
+     "alert": true,
+     "rf": 0
+    },
+    {
+     "at": [
+      0,
+      "完全"
+     ],
+     "text": "完全尿不出来：立即急诊",
+     "alert": true,
+     "rf": 1
+    }
+   ],
+   "cues": {
+    "f1": [
+     0,
+     "发烧"
+    ],
+    "f2": [
+     0,
+     "完全"
+    ]
+   },
+   "tail": 2.2,
+   "lead": 0.3
+  }
+ ],
+ "timing": {
+  "lead": 0.26,
+  "tail": 0.36,
+  "outro": 5.0,
+  "gap_same": 0.12,
+  "gap_switch": 0.28,
+  "est_chars_per_s": 5.0
+ },
+ "qa": {
+  "red_flags_match": "strict",
+  "dips_ok": []
+ },
+ "subtitle_numbers": [],
+ "style": {
+  "name": "扁平元素风 · 可爱版（系列统一）",
+  "palette": {
+   "paper": "#FFF4E2",
+   "paper2": "#FFE7C7",
+   "ink": "#3B2F4A",
+   "ink2": "#6E6178",
+   "white": "#FFFDF8",
+   "night": "#2E3558",
+   "night2": "#3D4772",
+   "moon": "#FFE9A8",
+   "red": "#F0605D",
+   "red_dark": "#C83C3A",
+   "water": "#7CC8E8",
+   "water_dark": "#3E9BC6",
+   "stone": "#D9B98F",
+   "skin": "#F6D3B5",
+   "pants": "#4B5570",
+   "urine": "#FFE07A",
+   "urine_dark": "#E6B93C",
+   "green": "#7FBF7B",
+   "yellow": "#FFD45E",
+   "grey": "#B8B2BC",
+   "steam_blue": "#CFEFFF",
+   "laser": "#FF5A36",
+   "kidney": "#C8695E",
+   "kidney_dark": "#A84E46",
+   "medulla": "#E39A8C",
+   "sinus": "#F6DFA8",
+   "tube": "#F2C879",
+   "tube_dark": "#D9A44A",
+   "bladder": "#F3B8A8",
+   "crystal": "#8C6A3F"
+  }
+ },
+ "voices": {
+  "_comment": "配音由用户自己录（tools/voice.py）：actor = 谁来配；desc = 嗓音和语气要求（写进台词本）",
+  "narrator": {
+   "actor": "（待定）",
+   "desc": "亲切、专业，吐字清楚，约每秒 4.5 字"
+  },
+  "zhou": {
+   "actor": "（待定）",
+   "desc": "三十出头的男声，语气轻快"
+  }
+ },
+ "tts": {
+  "asr_prompt": "医学科普。",
+  "_asr_prompt_note": "录音回读（whisper）的提示词只写领域，不写目标词（写了会把读对的字硬改）",
+  "must": {},
+  "_must_note": "必须读对的关键词带调拼音，如 {\"s08_0\": [\"wan1 chu2\"]}：回读里少了就判不过",
+  "min_pinyin": 0.92,
+  "_min_pinyin_note": "回读与台词的无调拼音相似度门限",
+  "ear_confirmed": [],
+  "_ear_note": "回读没过、但人耳听过没问题的句子 id（如 \"s03_2\"）",
+  "emo_notes": {},
+  "_emo_note": "语气词 → 写进台词本的表演提示（模板有默认表，见 tools/_common.py emo_notes）"
+ },
+ "design": {
+  "doc": "design/设计方案_v1.md",
+  "say_overrides": {},
+  "say_overrides_why": "读音提示：原字 → 同音字（如 长→涨），台词本里会标出这个字的读音；字幕仍用原字"
+ },
+ "audio": {
+  "bgm": {
+   "bpm": 104,
+   "minor": [],
+   "quiet": []
+  },
+  "_bgm_note": "minor/quiet 都是 [场, 起cue或null, 止cue或null] 的区间；null 表示场首/场尾",
+  "sfx": [
+   {
+    "scene": "s01",
+    "cue": "pain",
+    "dt": 0.0,
+    "sfx": "thud",
+    "gain": 0.22
+   },
+   {
+    "scene": "s03",
+    "cue": "ok",
+    "dt": 0.1,
+    "sfx": "chime",
+    "gain": 0.1
+   }
+  ],
+  "_sfx_note": "[{\"scene\":\"s02\",\"cue\":\"f1\",\"dt\":0.1,\"sfx\":\"thud\",\"gain\":0.22}]；sfx 名见 tools/mix.py 的 SFX 库"
+ },
+ "cover": null,
+ "_cover_note": "要封面就写 {\"hold\": 2.0, \"title_lines\": [...], \"hook\": \"...\", \"tagline\": \"...\", \"ai_tag\": \"AI 生成内容\"} 并在 scenes.js 写 SC.cover；成片第一帧即封面",
+ "_media_note": "scenes[].media[] 视频 / 帧序列素材（intro_media / outro_media 同）：{id, src: \"assets/.../f_%04d.jpg\", frames, fps, at: [cue, 偏移], dur, loop, still}；人物默认用 3D 静帧立绘（storyboard.assets 登记 sp_*，scenes.js 用 SH.SP 画）。",
+ "_credits_note": "片尾署名，每条一行；可写 {\"text\": \"...\", \"orient\": \"port\"|\"land\"} 只在某一画幅显示",
+ "assets": {
+  "sp_zhou_pain": {
+   "src": "assets/lib/characters/sprites/sp_zhou_pain.png"
+  },
+  "sp_zhou_drink": {
+   "src": "assets/lib/characters/sprites/sp_zhou_drink.png"
+  },
+  "ic_bottle": {
+   "src": "assets/lib/props/ic_bottle.png"
+  },
+  "fs_zhou_desk": {
+   "src": "assets/lib/scenes/fs_zhou_desk.png"
+  }
+ },
+ "_example_note": "技能自带的样例专题，只为演示写法（满幅 3D 镜头、透明底立绘、道具图标、代码画的解剖、危险信号字卡）。选题和来源只是举例：做自己的片子时，按选题重新检索权威来源（references/sources.md），口径由用户逐条核对。"
+}
