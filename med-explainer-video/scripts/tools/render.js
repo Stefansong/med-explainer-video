@@ -15,12 +15,12 @@ const C = require('./_common.js');
   const launch = () => puppeteer.launch({ executablePath: C.CHROME, args: ['--allow-file-access-from-files'], protocolTimeout: 600000 });
   const RD = C.renderRel(); fs.mkdirSync(`${RD}/seg`, { recursive: true });
   const started = Date.now(); let done = 0, errs = 0; const checks = [], amSeg = [], fontsW = [], refsW = [];
-  const W2B = {}, FF = {}, prog = []; let lastPrint = 0;
+  const W2B = {}, FF = {}, prog = [], ERRMSG = {}; let lastPrint = 0;
   const job = async (w, attempt = 0) => {
     const a = F0 + w * per, e = Math.min(F1, a + per); const out = `${RD}/seg/${tag}_${String(w).padStart(2, '0')}.mp4`;
     if (!attempt) await new Promise((r) => setTimeout(r, w * 4000));   // 各页错开 4 s 启动，避免同时加载拖慢
     const b = await launch(); W2B[w] = b; const p = await b.newPage(); await p.setViewport({ width: W, height: H });
-    p.on('pageerror', (er) => { errs++; console.log('PAGEERR', er.message); }); p.on('console', (m) => { if (m.type() === 'error') { errs++; if (errs < 20) console.log('CONSOLE', m.text()); } });
+    p.on('pageerror', (er) => { errs++; ERRMSG[er.message] = (ERRMSG[er.message] || 0) + 1; console.log('PAGEERR', er.message); }); p.on('console', (m) => { if (m.type() === 'error') { errs++; ERRMSG[m.text()] = (ERRMSG[m.text()] || 0) + 1; if (errs < 20) console.log('CONSOLE', m.text()); } });
     await p.goto(C.playerUrl({ strict: '1' })); await p.waitForFunction('document.title==="ready"', { timeout: 600000 });   // 正式渲染：素材缺失直接报错，不静默回退
     await p.evaluate(() => OV.resetCheck());
     // JPEG 帧是全范围 BT.601：编码时转成标准电视范围 BT.709 并打标签，避免播放器偏色
@@ -35,6 +35,7 @@ const C = require('./_common.js');
       if (done - lastPrint >= 900) { lastPrint = done; console.log(`${done}/${F1 - F0} frames, ${((Date.now() - started) / 1000).toFixed(0)} s`); }
     }
     ff.stdin.end(); await new Promise((r) => ff.on('close', r));
+    const eng = await p.evaluate(() => (typeof ENGINE !== 'undefined' && ENGINE.ERRS) || {}); for (const [m, n] of Object.entries(eng)) { ERRMSG[m] = (ERRMSG[m] || 0) + n; errs += n - 1; }   // 引擎同一条错误只打印一次：按实际帧数补计
     checks[w] = await p.evaluate(() => OV.CHECK); fontsW[w] = await p.evaluate(() => window.FONTS_STATUS || null); refsW[w] = await p.evaluate(() => OV.refInfo || null); await b.close(); return out;
   };
   // 单段失败（页面崩溃/超时）整段重渲，最多 2 次；不让一个页面拖垮整次渲染
@@ -48,7 +49,7 @@ const C = require('./_common.js');
   execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'concat', '-safe', '0', '-i', `${RD}/seg/list.txt`, ...audioIn, '-map', '0:v', '-map', '1:a', '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', ...((C.ORIENT === 'land' && (SB.cover || {}).file_comment_land) || (SB.cover || {}).file_comment ? ['-metadata', `comment=${(C.ORIENT === 'land' && SB.cover.file_comment_land) || SB.cover.file_comment}`] : []), out]);   // 成片元数据写 AI 生成内容说明（cover.file_comment；10-24 竖屏也写，不只投稿版）
   // 叠字层自检汇总（各段计数相加，样本取前 12 条）
   // counts：帧数；items：按 (scene, text) 去重的卡/字幕块（frames 累加、min_size 取最小、first_T 取最早）；unique：每类去重后的张数
-  const sum = { counts: {}, items: {}, unique: {}, frames: F1 - F0, fps, sub: SUB, orient: C.ORIENT, width: W, height: H, page_errors: errs, silent_audio: !mix, fonts: fontsW.find(Boolean) || null, refs: refsW.find(Boolean) || null };
+  const sum = { counts: {}, items: {}, unique: {}, frames: F1 - F0, fps, sub: SUB, orient: C.ORIENT, width: W, height: H, page_errors: errs, page_error_samples: Object.entries(ERRMSG).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([m, n]) => `${m}（${n} 次）`), silent_audio: !mix, fonts: fontsW.find(Boolean) || null, refs: refsW.find(Boolean) || null };
   for (const ch of checks) { if (!ch) continue; for (const [k, v] of Object.entries(ch.counts)) sum.counts[k] = (sum.counts[k] || 0) + v;
     for (const [k, items] of Object.entries(ch.items || {})) { const I = (sum.items[k] = sum.items[k] || {}); for (const [key, it] of Object.entries(items)) { const o = I[key]; if (!o) I[key] = { ...it }; else { o.frames += it.frames; if (it.min_size != null) o.min_size = Math.min(o.min_size ?? it.min_size, it.min_size); o.first_T = Math.min(o.first_T, it.first_T); } } } }
   for (const [k, I] of Object.entries(sum.items)) sum.unique[k] = Object.keys(I).length;

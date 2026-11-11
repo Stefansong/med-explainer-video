@@ -28,7 +28,7 @@ examples_en:
 - **适用于任何医学科普选题**（内科、外科、儿科、口腔、护理、用药、急救、慢病管理…），不绑定专科。
 - **医学内容由用户负责把关**：口径表（每条医学表述 + 出处）必须由用户（最好是执业医生）确认。你只能比原文写得更简略，不能更绝对；不确定的标出来问，不要编。
 - **三个 HARD 停点必须停下等用户亲口确认**：S0 口径表 + 节拍表、S3 角色定稿与配音分工、S6a 动画预演。流水线读 `storyboard.status.{s0,s3,s6a}.confirmed`，没确认就拒绝往下跑。**绝不能替用户把 confirmed 改成 true**，只有用户在对话里明确说“确认”之后，才按用户原话写 `{"confirmed": true, "by": "用户", "date": "YYYY-MM-DD", "note": "原话"}`。
-- **配音由用户录**，你不合成语音。你负责出台词本、导入录音、核对回读结果。
+- **配音由用户录**。你负责出台词本、导入录音、核对回读结果。合成声只能当草稿（`voice --draft`，对节奏用），正式成片必须是真人录音，流水线会拦。
 - **解剖结构不交给生图模型**：器官、管道、剖面由你在 `src/anat.js` / `src/scenes.js` 里用代码画，并逐项核对科学性（见 `references/anatomy.md`）。生图只用于 3D 人物、场景和道具图标。
 - **模型能力**：写场景代码、画解剖、看图核对对模型要求高，建议用户选当前可用模型里最强、且能看图的那个；轻量模型容易写出跑不通或很空的画面。
 - **画面里零文字**：所有中文由叠字层（字幕、字卡、片名、片尾）负责；生图提示词写明“无文字、无水印”。
@@ -50,23 +50,38 @@ python "$SKILL/scripts/pipeline.py" timeline <工作目录>/demo --estimate
 python "$SKILL/scripts/pipeline.py" animatic <工作目录>/demo
 ```
 
-得到一条 45 秒的无声预演 `render/demo_preview_v1.mp4`。样例的选题（肾结石）只是举例，写法适用于任何选题。样例的 `design/storyboard_demo.json`、`src/scenes.js`、`src/anat.js` 就是标准写法：满幅 3D 镜头、透明底立绘、道具图标、代码画的解剖、危险信号字卡各示范了一次。**写新片时照着样例改，不要从零发明写法**；函数用法查 `references/api.md`。
+得到一条 45 秒的无声预演 `render/demo_preview_v1.mp4`（约 1 分钟）。样例的选题（肾结石）只是举例，写法适用于任何选题。样例的 `design/storyboard_demo.json`、`src/scenes.js`、`src/anat.js` 就是标准写法：满幅 3D 镜头、透明底立绘、道具图标、代码画的解剖、危险信号字卡各示范了一次。**写新片时照着样例改，不要从零发明写法**；函数用法查 `references/api.md`。
 
 ## 流程
 
 | 阶段 | 命令（`P="$SKILL/scripts/pipeline.py"`） | 产物 | 停点 |
 |---|---|---|---|
 | 建专题 | `python $P new <project> --title "片名" --dir <工作目录>` | `<工作目录>/<project>/` | |
-| S0 口径与分镜 | 你写 `design/storyboard_<project>.json` → `python $P s0 <专题>` | 修订稿 `design/<project>_修订稿_v<ver>.md` | **HARD S0** |
+| S0 口径与分镜 | 你写 `design/storyboard_<project>.json` → `python $P check <专题>` → `python $P s0 <专题>` | 修订稿 `design/<project>_修订稿_v<ver>.md` / `.docx` | **HARD S0** |
 | S3 角色与配音分工 | 你用平台生图出定妆图 → `tools/cutout.py` 抠底登记 → `python $P s3 <专题>` | `assets/lib/characters/`、`scenes/`、`props/` | **HARD S3** |
-| 配音 | `python $P voice <专题>` → 用户照 `audio/台词本.md` 录音放进 `audio/recordings/` → 再跑一次 | `audio/lines/*.wav` + `lines.json` | 缺录音停（退出码 6） |
-| 动画 | 你写 `src/scenes.js`、`src/anat.js` → `python $P frames <专题>` 反复看 `render/check_sheet.png` | 抽帧联系表 | |
+| 配音 | `python $P voice <专题>` → 用户照 `audio/台词本.docx` 录音放进 `audio/recordings/` → 再跑一次 | `audio/lines/*.wav` + `lines.json` | 缺录音停（退出码 6） |
+| 动画 | 你写 `src/scenes.js`、`src/anat.js` → `python $P check <专题>` → `python $P frames <专题>` 反复看 `render/check_sheet.png` | 抽帧联系表 | |
 | 预演 + 渲染前审核 | `python $P run <专题> --until s6a` | `render/<project>_preview_vN.mp4` | 等审核（退出码 5）→ **HARD S6a** |
 | 正式版 + QA | `python $P run <专题> --until qa` | `render/<project>_final.mp4` + `.qa.json` | QA 不过退出码 2 |
 | 成片审核 + 交付 | `python $P run <专题> --until deliver` | `render/deliver_final.json` | 等审核（退出码 5） |
 | 清理 | `python $P clean <专题>`，看过清单再 `--apply` | 旧版本移进回收站 | |
 
-没录音也能先调画面：`python $P timeline <专题> --estimate` 按字数估时长，再 `frames` / `animatic`。`python $P status <专题>` 看各阶段状态。退出码：0 完成，2 失败，3 停在 HARD 点，5 等审核，6 等录音。
+没录音也能先调画面：`python $P timeline <专题> --estimate` 按字数估时长，再 `frames` / `animatic`。`python $P status <专题>` 看各阶段状态。退出码：0 完成，2 失败，3 停在 HARD 点，5 等审核，6 等录音，7 后台任务还在跑。
+
+### 改完先 check
+
+每次改完 `storyboard` 或 `src/scenes.js`，先跑 `python $P check <专题>`（1 秒出结果）。它会用人话指出：JSON 第几行写坏了、字卡锚的词不在那句台词里、角色没登记、图没登记、场景函数缺了、调用了不存在的函数（并给出相近的名字）、cue 没声明、画面里写了字。`✗` 是必须改的错误，`!` 是提醒（例如“这句台词讲到的内容画面上没有对应变化”“全片只用了一张立绘”），提醒也要逐条处理或向用户说明为什么不改。
+
+### 长命令放后台
+
+导入录音、预演、正式渲染都可能跑几分钟到几十分钟，超过你一次工具调用的时限就会被掐断。这类命令一律加 `--bg`：
+
+```
+python $P run <专题> --until s6a --bg      # 立刻返回，任务在后台跑
+python $P wait <专题>                      # 等最多 90 秒，打印最近的进度；退出码 7 = 还在跑，接着再 wait
+```
+
+`wait` 返回别的退出码就是任务结束了，含义同上（0 完成、2 失败并带出错原因、3 / 5 / 6 停点）。同一个专题一次只跑一个后台任务。
 
 ## 每一步怎么做
 
@@ -79,7 +94,8 @@ python "$SKILL/scripts/pipeline.py" animatic <工作目录>/demo
    - `red_flags[]`：危险信号要齐全，每条都要上一张 alert 字卡。
    - `scenes[]`：每场 `beat` / `hook` / `visual` / `lines[]`（who、text、emo）/ `labels[]`（字卡锚到台词里的词，≤ 14 字）/ `cues{}` / `check_frames[]`。
    - 台词按每秒 4.5 字估时长；多音字在 `lines[].say` 里写同音字提示录音（字幕仍用原字）。
-4. `python $P s0 <专题>` 生成修订稿，把口径表、危险信号、每场节拍交给用户逐条看。**停下等用户确认 S0。**
+4. 删掉模板里用不上的占位角色、占位场景和占位口径，跑 `python $P check <专题>` 把错误清零。
+5. `python $P s0 <专题>` 生成修订稿（md + Word），把口径表、危险信号、每场节拍交给用户逐条看。**停下等用户确认 S0。**
 
 ### 2. S3：3D 角色、场景、道具
 
@@ -95,24 +111,28 @@ python "$SKILL/scripts/pipeline.py" animatic <工作目录>/demo
 
 按 `references/voice_recording.md`：
 
-1. `python $P voice <专题>` 出 `audio/台词本.md`（按角色分组：文件名、台词、读音提示、语气、参考时长），把它交给用户。
+1. `python $P voice <专题>` 出 `audio/台词本.md` 和 `台词本.docx`（按角色分组：文件名、台词、读音提示、语气、参考时长），把 Word 版交给用户。
 2. 用户录好放进 `audio/recordings/`：一句一个文件（`s03_2.m4a`）、一个角色一整段（`narrator.m4a`，句间停 1.5 秒以上）、或一场一个文件都行。
 3. 再跑 `python $P voice <专题>`：自动转码、降噪、切静音、统一响度，并用 whisper 回读逐句核对台词。对不上的句子会列出来，让用户听一下：没问题就写进 `storyboard.tts.ear_confirmed`，有问题就单句重录。
 4. 你听不到声音：读音和语气的最终判断交给用户人耳。
+5. 用户想在录音前先看带声音的预演：先问用户是否同意把台词文本发给微软的在线朗读服务，同意再跑 `python $P voice <专题> --draft`（要联网、要 `pip install edge-tts`）。草稿声只用来对节奏，预演审核、S6a 确认和正式版都要等真人录音导入之后，流水线会拦（退出码 6）。
 
 ### 4. 动画
 
-1. 每场写 `src/scenes.js` 的 `SC.<场景id> = (c, A) => { … }`。先读 `references/api.md` 和样例的 `scenes.js`，用现成的镜头函数拼（`SH.full` 满幅镜头、`SH.SP` 立绘、`SH.IC` 图标、`SH.seg` 换镜、`SH.alarm` / `SH.flags` 危险信号、`PR.*` 道具），尽量不手写底层绘图。一次只写一场，写完就抽帧看，再写下一场。每帧只由时间决定（不用 `Math.random` 和 `Date`）。
+1. 新专题的 `src/scenes.js` 是一份占位骨架（只有两个示范场），**整份换成你自己的场景**，别在它上面打补丁。每场写 `SC.<场景id> = (c, A) => { … }`。先读 `references/api.md` 和样例的 `scenes.js`，用现成的镜头函数拼（`SH.full` 满幅镜头、`SH.SP` 立绘、`SH.IC` 图标、`SH.seg` 换镜、`SH.steps` 分步演示、`SH.spot` 圈出重点、`SH.arrow` 箭头、`SH.level` 等高线、`SH.zoomImg` 局部放大、`SH.alarm` / `SH.flags` 危险信号、`PR.*` 道具），尽量不手写底层绘图。一次只写一场，写完就 `check`、抽帧看，再写下一场。每帧只由时间决定（不用 `Math.random` 和 `Date`）。
+   - **每条要点都要有对应的画面**：台词讲到一个动作、一个部位、一个数字，画面上就要有东西在那一刻出现或变化（在 storyboard 给那句话声明 `cues`，场景代码里用 `A.cue('名字')` 触发）。只放一张人物立绘加字卡，等于没有演示。
+   - **每场换姿势或换道具**：同一张立绘不要从头用到尾；按内容出不同动作的立绘（示范、指、皱眉、点头）。
+   - **开场第一秒就有主体**：第一场不要让所有东西都等某个 cue 才出现。
 2. 解剖示意写在 `src/anat.js`（`AN.*`），按 `references/anatomy.md` 先查权威参考图再画，逐项核对。
-3. `python $P frames <专题>` 抽帧，**打开图片亲眼看** `render/check_sheet.png` 和 `render/anat_sheet.png`（原尺寸逐张核解剖）；叠字层自检有硬错会直接失败。如果你（当前模型）看不了图片，明确告诉用户，请用户看图反馈，不要假装看过。
+3. `python $P frames <专题>` 抽帧，**打开图片亲眼看** `render/check_sheet.png` 和 `render/anat_sheet.png`（原尺寸逐张核解剖）；叠字层自检有硬错、画面代码运行出错、或某一场抽出来基本是空画面，都会直接失败并说明是哪一场、为什么。如果你（当前模型）看不了图片，明确告诉用户，请用户看图反馈，不要假装看过。
 4. 检查：画面零文字、道具跨镜头连续、字卡不压主体、人物不钻到顶部进度条下面、开场 2 秒内有东西动。
 
 ### 5. 预演、两道审核、S6a、正式版
 
-1. `python $P run <专题> --until s6a`：出预演，然后打包审核材料，停在退出码 5。
+1. `python $P run <专题> --until s6a --bg`：出预演，然后打包审核材料，停在退出码 5。
 2. **渲染前审核**：另开一个对话或子代理当独立审核员，把 `references/audit_pre_prompt.md` 原样交给它（替换 `{project}` `{n}`），材料起点是 `render/audit/pre_v<n>/index.md`。不要把你自己的判断带进去。审核员可以直接改非口径问题并重跑预演，口径问题只能提交给用户。报告 `design/audit_pre_v<n>.md` 写完后用 `audit.py stamp` 盖章。
 3. 再跑 `run --until s6a`，审核门通过后，把预演 mp4、联系表、审核员交给用户的口径问题一起给用户看。**停下等用户确认 S6a。**
-4. `python $P run <专题> --until qa`：60 fps + 4 子帧运动模糊的正式版，QA 门检查字幕逐字一致、逐句回读、字幕开口点对齐、响度、危险信号上屏、AI 标识、字体缺字等。
+4. `python $P run <专题> --until qa --bg`：出正式版。默认标准画质（30 fps + 2 子帧运动模糊）；用户要更顺滑的画面再加 `--quality high`（60 fps + 4 子帧，耗时约 1.6 倍）。渲染耗时和电脑核数有关：15 核笔记本上大约和片长一样长，核少的电脑会慢几倍，所以一律放后台跑。QA 门检查字幕逐字一致、逐句回读、字幕开口点对齐、响度、危险信号上屏、AI 标识、字体缺字等。
 5. **成片审核**：`run --until deliver` 停在退出码 5，另开审核员用 `references/audit_post_prompt.md` 审成片，写 `render/audit_post_final.md` 并盖章；不过就修、重渲、换一个新审核员复审。
 6. 交付后 `python $P clean <专题>` 列出旧版本，用户看过再 `--apply`（移进回收站，可还原）。`python $P export_subs <专题>` 可导出 srt 字幕。
 
@@ -126,6 +146,7 @@ python "$SKILL/scripts/pipeline.py" animatic <工作目录>/demo
 6. 人物只用 3D（满幅静帧或透明底立绘），不和 2D 手绘小人混搭，不用画中画式贴图卡片。
 7. 成片片头有“AI 生成内容”标识（叠字层自动画，符合 GB 45438—2025），片尾写明哪些素材由 AI 生成。
 8. 成片审核通过才清理；清理只移进回收站，清空由用户自己决定。
+9. 报错先读报错：流水线的错误信息会说哪个文件第几行、为什么、怎么改。照着改，不要绕过检查，也不要删掉报错的那一场了事。
 
 ## 参考文件
 

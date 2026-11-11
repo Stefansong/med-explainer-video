@@ -1,5 +1,5 @@
 {
- "_comment": "版式 v2（2026-10-16，来源 bph/design/layout_v2_proposal.png + 系列模板会话）。叠字层 overlay.js 与引擎 engine.js 只读这个文件，改版式只改这里、不改代码。单位：画布像素，竖屏 1080×1920。",
+ "_comment": "版式 v2。叠字层 overlay.js 与引擎 engine.js 只读这个文件，改版式只改这里、不改代码。单位：画布像素，竖屏 1080×1920。",
  "version": "v2",
  "width": 1080,
  "height": 1920,
@@ -171,7 +171,7 @@
    "family": "\"HeiTiSub\"",
    "weight": 400
   },
-  "_comment": "bph S3 定稿（用户 10-12：老人看不清 → 粗黑体加大字号）：字幕 思源黑体 Heavy，字卡 Bold，片名/大字卡 得意黑，文献/署名 思源黑体 Regular。files 里的字体由 player.html 用 FontFace 注册，路径相对项目根。10-21 用户：去掉苹方后备（横屏竖屏一样只用开源字体）；浏览器对缺字仍会回退系统字体，真正的防线是 tools/check_fonts.py 逐字核 cmap，缺字在 QA 门报出（qa_gate.font_fallback）。"
+  "_comment": "老年观众看得清：粗黑体、大字号。字幕 思源黑体 Heavy，字卡 Bold，片名/大字卡 得意黑，文献/署名 思源黑体 Regular。files 里的字体由 player.html 用 FontFace 注册，路径相对项目根。10-21 用户：去掉苹方后备（横屏竖屏一样只用开源字体）；浏览器对缺字仍会回退系统字体，真正的防线是 tools/check_fonts.py 逐字核 cmap，缺字在 QA 门报出（qa_gate.font_fallback）。"
  },
  "qa_gate": {
   "label_over_subtitle": 0,

@@ -17,7 +17,7 @@
   审核材料  render/audit/pre_vN/ 保留最新 N 版；render/recheck/ 下只留现行审核报告（最新 N 份 audit_pre + audit_post_*）里引用到的
   旧成片    render/archive/{p}_final_*（连同 qa / overlay / 审核报告）                   按归档版本保留最新 N−1 版（加上现行成片 = N 版）
   原集遗留  别的专题名开头的 preview / final / cover 文件、*.orig_copy、render/archive/orig_*（副本建出来时带过来的，原集目录里都还在）  全清
-  3D 片段   assets/pix3d/<场>/<片段>/ 没被 storyboard / 场景代码引用的（服务器 ~/kepu/pix/<p>/ 还有）  全清
+  3D 片段   assets/pix3d/<场>/<片段>/ 没被 storyboard / 场景代码引用的  全清
   GPT 原图  render/pix3d_gpt/<id>/：被 storyboard（定妆 art3d / art、assets、gen.image）/ 场景代码 / 出图清单引用的永远留；_vN 旧版保留最新 N 版（不带后缀的现行版算一版）；
             _cN 是候选不是版本（S3 选定的 c1 不因有 c2/c3 被当旧版），没人引用的才清；rejected/ 同一镜头只留最新 1 张
   文稿      design/ 下带版本号的 *_vX[.Y].md/.docx（审核报告、差异稿、修订稿、summary、review…）同名族保留最新 N 版

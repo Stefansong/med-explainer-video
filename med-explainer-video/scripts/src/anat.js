@@ -1,5 +1,5 @@
 // 解剖图（专题自有）：模板里只放空壳。每个专题在这里写自己的解剖绘制（如 bph 的 AN.coronal / AN.sagittal、kidney_stone 的肾与输尿管），
-// 参数驱动、画面零文字；解剖核对清单写在 storyboard.anatomy_checks，每张出图都要按原尺寸逐张核（见 WORKFLOW.md 第 4 阶段）。
+// 参数驱动、画面零文字；解剖核对清单写在 storyboard.anatomy_checks，每张出图都要按原尺寸逐张核（见 references/anatomy.md）。
 // 约定：AN.xxx(c, x, y, s, o)，(x,y) 为图中心，s=1 时约 600 px 高；颜色只取 L.P（storyboard.style.palette）。
 'use strict';
 const AN = {};

@@ -38,7 +38,7 @@ const SC = {};
       const u = L.seg(t, fall, stuck);                // 结石沿 肾盏 → 肾盂 → 输尿管上段 走
       const [sx, sy] = AN.stonePos(u);
       AN.stone(c, sx, sy, 15 * L.easeOut(L.seg(t, grow + 0.6, grow + 2.6)));
-      if (t > stuck) { const q = (t - stuck) * 1.4 % 1; L.ring(c, AN.STUCK[0], AN.STUCK[1], 22 + 46 * q, 7, L.alpha(p.red, 0.8 * (1 - q))); }   // 卡住：红色脉动
+      SH.spot(c, AN.STUCK[0], AN.STUCK[1], 44, t, stuck);   // 卡住的位置：红色脉动圈，“看这里”
     }, { x: X, y: Y, s: S });
     // 右侧：结石放大窗，让手机上也看得清
     const zk = L.pop(t, grow + 1.0);
@@ -55,9 +55,10 @@ const SC = {};
   SC.s03 = (c, A) => {
     const t = A.t, water = A.cue('water'), two = A.cue('two'), ok = A.cue('ok');
     home(c, t);
-    IC(c, A, 'ic_bottle', 210, 760, 400, { pop: (t - water) / 0.45, shadow: true });
+    IC(c, A, 'ic_bottle', 190, 760, 400, { pop: (t - water) / 0.45, shadow: true });
     const k = L.pop(t, water + 0.5);
     if (k > 0) L.with(c, () => jug(c, 0, 0, 4 / 5.5 * L.easeInOut(L.seg(t, water + 0.9, two + 0.4)), L.pop(t, two + 0.4)), { x: 500, y: 780, s: k });
+    SH.arrow(c, 288, 780, 384, 780, (t - water - 0.8) / 0.4, P().water_dark, 12);   // 喝进去的水 → 排出来的尿量：箭头从水瓶长到量杯
     SP(c, A, 'sp_zhou_drink', spX(A, 'sp_zhou_drink', 800, 620), 1180, 620, { pop: (t - ok + 0.2) / 0.45 });
   };
 

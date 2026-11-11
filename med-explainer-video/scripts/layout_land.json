@@ -1,6 +1,6 @@
 {
  "version": "land-v1 (2026-10-21)",
- "_comment": "横屏 1920×1080 投稿版版式（中华护理杂志社健康科普作品平台）。数值从 bph 交付版抄来（bph/src/overlay.js OV.LAYOUTS.land、board2 要点板、navLock 章节导航、refs 文献页）。ORIENT=land 时 tools/_common 自动选本文件，产物写 render/land/；改版式只改这里，不改代码。",
+ "_comment": "横屏 1920×1080 版式（右侧要点板、章节导航、片尾文献页）。ORIENT=land 时 tools/_common 自动选本文件，产物写 render/land/；改版式只改这里，不改代码。",
  "orient": "land",
  "width": 1920,
  "height": 1080,
@@ -47,11 +47,11 @@
   "anchor": "bottom_right",
   "right": 1880,
   "bottom": 1040,
-  "_comment": "GB 45438—2025 / 投稿须知：起始画面右下角“人工智能生成合成”，文字高 ≥ 短边 5%（1080×5% = 54 px，+4 余量 = 58），从第 0 帧起 ≥ 2 s；封面 hold_land 默认 3.0 s"
+  "_comment": "GB 45438—2025：起始画面右下角“人工智能生成合成”，文字高 ≥ 短边 5%（1080×5% = 54 px，+4 余量 = 58），从第 0 帧起 ≥ 2 s；封面 hold_land 默认 3.0 s"
  },
  "labels": {
   "style": "board",
-  "_comment": "D 改良要点板（bph 10-20 用户选定）：一块白板浮在右侧，板头 = 本场主题 scene.topic（蓝底）或本场最近一张 big 卡（红底）；条目按满格高度居中到 center_y；同屏格数 = (scene.max_labels || max_default) + extra_rows；超出时最老的淡出、其余上移",
+  "_comment": "要点板：一块白板浮在右侧，板头 = 本场主题 scene.topic（蓝底）或本场最近一张 big 卡（红底）；条目按满格高度居中到 center_y；同屏格数 = (scene.max_labels || max_default) + extra_rows；超出时最老的淡出、其余上移",
   "x": 1110,
   "width": 760,
   "head_height": 82,
@@ -97,7 +97,7 @@
   "stroke": 0.24,
   "lead": 0.06,
   "tail": 0.3,
-  "_comment": "整幅居中；max_chars 与 bph 横屏交付版相同（13）"
+  "_comment": "整幅居中；每行最多 13 字"
  },
  "bottom_reserved": [
   1080,
@@ -176,7 +176,7 @@
    "family": "\"HeiTiSub\"",
    "weight": 400
   },
-  "_comment": "投稿须知：只用开源免费商用字体（思源黑体、得意黑，SIL OFL），不回退系统字体；tools/check_fonts.py 逐字核字形覆盖，qa 门 font_fallback"
+  "_comment": "只用开源免费商用字体（思源黑体、得意黑，SIL OFL），不回退系统字体；tools/check_fonts.py 逐字核字形覆盖，qa 门 font_fallback"
  },
  "qa_gate": {
   "label_over_subtitle": 0,
@@ -195,6 +195,6 @@
   "min_width": 1280,
   "min_height": 720,
   "ai_mark_min_seconds": 2.0,
-  "_comment": "投稿版：母版 30 fps + 4 子帧运动模糊（与 bph 交付版相同）→ 两遍 libx264 压到 target_mb（平台上限 50 M）"
+  "_comment": "高画质档（--quality high）：30 fps + 4 子帧运动模糊；target_mb 是另做压缩版时的目标大小"
  }
 }

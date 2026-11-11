@@ -25,6 +25,11 @@ jobs:
           PYTHONUTF8: '1'
           SMOKE_DIR: ${{ runner.temp }}/smoke
         run: python tests/smoke.py
+      - name: Error-message test
+        env:
+          PYTHONUTF8: '1'
+          SMOKE_DIR: ${{ runner.temp }}/errs
+        run: python tests/test_errors.py
       - name: Upload result
         if: always()
         uses: actions/upload-artifact@v4
@@ -36,4 +41,6 @@ jobs:
             ${{ runner.temp }}/smoke/demo/render/*_sheet.png
             ${{ runner.temp }}/smoke/demo/render/pipeline.log
             ${{ runner.temp }}/smoke/demo/audio/lines/lines.json
+            ${{ runner.temp }}/smoke/demo/render/bg_job.log
+            ${{ runner.temp }}/smoke/demo/design/*.docx
           if-no-files-found: warn

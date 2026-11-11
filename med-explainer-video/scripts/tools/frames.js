@@ -11,7 +11,7 @@ const C = require('./_common.js');
   fs.mkdirSync(out, { recursive: true });
   const b = await puppeteer.launch({ executablePath: C.CHROME, args: ['--allow-file-access-from-files'] });
   const TL = C.loadTL(); const p = await b.newPage(); await p.setViewport({ width: TL.width, height: TL.height });
-  p.on('console', (m) => m.type() === 'error' && console.log('CONSOLE', m.text())); p.on('pageerror', (e) => console.log('PAGEERR', e.message));
+  const perr = []; p.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) perr.push(m.text()); }); p.on('pageerror', (e) => perr.push('页面脚本出错：' + e.message));
   await p.goto(C.playerUrl()); await p.waitForFunction('document.title==="ready"', { timeout: 120000 });
   await p.evaluate(() => OV.resetCheck());
   const marks = [];
@@ -25,5 +25,8 @@ const C = require('./_common.js');
   ck.unique = Object.fromEntries(Object.entries(ck.items || {}).map(([k, v]) => [k, Object.keys(v).length]));
   if (Object.keys(ck.counts).length) console.log('!! 叠字层自检（去重张数）：', JSON.stringify(ck.unique), '帧数', JSON.stringify(ck.counts));
   console.log(`→ ${out}: ${ts.length} frames`);
+  const eng = await p.evaluate(() => (typeof ENGINE !== 'undefined' && ENGINE.ERRS) || {});
   await b.close();
+  const all = [...new Set(Object.keys(eng).concat(perr))];
+  if (all.length) { console.log(`\n✗ 画面代码有 ${all.length} 种错误（出错的场景画面是空的，左上角有品红色小方块）：`); for (const m of all.slice(0, 12)) console.log('  - ' + m); process.exit(1); }
 })();

@@ -6,27 +6,30 @@
   python pipeline.py new <project> --example                                 建一份样例专题（45 秒，素材和代码齐全）；接着 timeline --estimate → animatic 就能看到预演
   python pipeline.py run <project> [--until s6a|render|qa|deliver] [--force]  从头跑到 --until（默认 qa）；碰到未确认的 HARD 点停下（退出码 3）、缺录音停下（退出码 6）
   python pipeline.py <stage> <project> [--force] [阶段参数]                    单跑一个阶段：s0 s3 voice timeline mix frames animatic audit_pre render qa audit_post deliver
-  python pipeline.py status <project>                                       各阶段状态 + 两道审核关卡
+  python pipeline.py check <project>                                        只检查不渲染（1–2 秒）：分镜和场景代码哪里写错了、怎么改。改完任何东西先跑它
+  python pipeline.py <任何命令> … --bg                                       放后台跑，立刻返回（预演、渲染、导入录音这类要跑几分钟以上的都加）
+  python pipeline.py wait <project> [--timeout=90]                          等后台任务：最多等 90 秒，打印进度；退出码 7 = 还在跑（再 wait），否则是任务自己的退出码
+  python pipeline.py status <project>                                       各阶段状态 + 两道审核关卡 + 后台任务
   python pipeline.py clean <project> [--apply]                              交付后清理：每类只留最新 2 版，其余移进回收站 / 废纸篓（不加 --apply 只列清单）
   --orient land（或环境变量 ORIENT=land）：横屏版，版式 layout_land.json，产物全在 render/land/。
 
 阶段与产物（输入哈希变了才重跑；产物在、哈希没变就跳过；失败的从失败处重跑）：
-  s0         gen_doc.py → design/{project}_修订稿_v{ver}.md（有 pandoc 时另出 .docx）    【HARD S0】status.s0.confirmed
+  s0         gen_doc.py → design/{project}_修订稿_v{ver}.md + .docx                      【HARD S0】status.s0.confirmed
   s3         核对角色 3D 定妆图 / 场景定妆图 / 素材登记、谁来配哪个角色              【HARD S3】status.s3.confirmed
-  voice      voice.py script → audio/台词本.md（录音用）；用户录好放进 audio/recordings/ → voice.py import：
+  voice      voice.py script → audio/台词本.md / .docx（录音用）；用户录好放进 audio/recordings/ → voice.py import：
              转码、降噪、去首尾静音、响度 −16 LUFS → whisper 回读核对台词 → 逐字时刻 → audio/lines/{scene}_{i}.wav + lines.json
-             录音不齐就停下，退出码 6（等用户录音）
+             录音不齐就停下，退出码 6（等用户录音）。voice --draft：没录音的句子先用合成声顶上，只够出预演（审核和正式版会拦）
   timeline   timeline.py → render/timeline.json（--estimate：没录音先按字数估时长调画面）
   mix        mix.py → render/mix.wav（程序化配乐 + 音效 + 人声闪避）
-  frames     checkset.js + anatset.js → frames.js → sheet.py → render/check/、render/check_sheet.png（叠字层自检硬错即失败）
+  frames     checkset.js + anatset.js → frames.js → sheet.py → render/check/、render/check_sheet.png（叠字层自检硬错、画面代码出错、某场是空画面 → 失败）
   animatic   render.js preview_vN（低帧率、无运动模糊）+ 联系表 + qa --no-asr
   audit_pre  渲染前审核关卡：tools/audit.py pack pre 打包材料 → 要有 design/audit_pre_v{n}.md 且 result pass、哈希一致，否则退出码 5 等审核
              （审核员 = 另开一个对话 / 子代理，提示词 references/audit_pre_prompt.md）；通过后才到【HARD S6a】status.s6a.confirmed
-  render     render.js final（60 fps + 4 子帧运动模糊）+ 封面。门：audit_pre pass 且哈希一致（S6a 后改过东西 → audit.py diff，只复审差异）
+  render     render.js final + 封面。画质：standard（默认，30 帧 + 2 子帧运动模糊）/ --quality=high（60 帧 + 4 子帧，实测慢约 1.6 倍）。门：audit_pre pass 且哈希一致（S6a 后改过东西 → audit.py diff，只复审差异）
   qa         qa.py final --gate → render/{project}_final.qa.json，不通过退出码 2
   audit_post 成片审核关卡：audit.py pack post → render/audit_post_{tag}.md pass 且成片哈希一致，否则退出码 5
   deliver    交付检查：audit_post pass + QA pass → render/deliver_{tag}.json 清单（文件、大小、sha1）
-退出码：0 完成；2 阶段失败 / QA 不通过；3 停在 HARD 点等用户；4 参数错；5 等审核；6 等用户录音。
+退出码：0 完成；2 阶段失败 / QA 不通过 / check 有错误；3 停在 HARD 点等用户；4 参数错；5 等审核；6 等用户录音；7 后台任务还在跑（wait）。
 两道审核门只看报告文件和哈希，不替用户确认任何 HARD 点。
 """
 import sys, os, subprocess
@@ -82,6 +85,23 @@ def fsha(p):
 def jdump(o): return json.dumps(o, ensure_ascii=False, sort_keys=True).encode()
 def default_workers(): return max(2, min(8, (os.cpu_count() or 4) // 2))   # 每个渲染页面是一个无头浏览器：普通笔记本别开太多
 
+def tool_mod(name):
+    spec = importlib.util.spec_from_file_location(name, TOOLS / f'{name}.py'); m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m); return m
+def check_sb(P, warn=True):
+    """分镜校验（tools/validate.py）：错误逐条打印并中止；提醒只打印"""
+    E, W, _ = tool_mod('validate').check(P.root)
+    for e in E: print('  ✗', e)
+    if warn:
+        for w in W: print('  !', w)
+    if E: raise RuntimeError(f'分镜（{P.sb_path.name}）有 {len(E)} 个错误，上面每条都写了在哪、怎么改；改完再跑')
+    return W
+def lint_scenes(P):
+    """场景代码检查（tools/lint_scenes.js，不渲染）：语法、不存在的函数、没登记的图、没声明的 cue、随机数"""
+    r = subprocess.run(['node', str(P.tools / 'lint_scenes.js')], cwd=P.root, env=P.env(), capture_output=True, text=True, encoding='utf-8', errors='replace')
+    out = (r.stdout or '') + (r.stderr or '')
+    for ln in out.strip().splitlines(): print('  ' + ln)
+    if r.returncode: raise RuntimeError('场景代码（src/scenes.js）有错误，上面每条都写了第几行、怎么改；改完再跑')
+
 class Project:
     def __init__(self, path, orient=None):
         self.root = Path(path).resolve()
@@ -96,7 +116,10 @@ class Project:
         self.status_file = self.rdir / 'stage_status.json'
         self.status = json.loads(self.status_file.read_text()) if self.status_file.exists() else {}
     @property
-    def SB(self): return json.loads(self.sb_path.read_text())
+    def SB(self):
+        try: return json.loads(self.sb_path.read_text())
+        except json.JSONDecodeError:
+            _, err = tool_mod('validate').load_json_friendly(self.sb_path); die(err, 2)
     @property
     def layout_file(self): return self.C.layout_path(self.root)
     @property
@@ -145,8 +168,10 @@ RENDER_SB_KEYS = ['disclaimer', 'title_card', 'outro', 'credits', 'characters', 
 def src_sig(P): return [fbytes(f) for f in sorted((P.root / 'src').glob('*.js'))] + [fbytes(P.root / 'src/player.html'), fbytes(P.tools / '_common.js'), sb_sub(P.SB, RENDER_SB_KEYS)]
 def tool_sig(P, *names): return [fbytes(P.tools / n) for n in names] + [fbytes(P.tools / '_common.py')]
 def rec_sig(P):   # 录音文件夹：文件名 + 大小 + 修改时间（换了录音就重新导入）
-    d = P.root / 'audio/recordings'
-    return jdump([[f.name, f.stat().st_size, int(f.stat().st_mtime)] for f in sorted(d.iterdir()) if f.is_file()] if d.is_dir() else [])
+    return jdump([[d, f.name, f.stat().st_size, int(f.stat().st_mtime)] for d in ('recordings', 'draft') if (P.root / 'audio' / d).is_dir() for f in sorted((P.root / 'audio' / d).iterdir()) if f.is_file() and f.suffix != '.json'])
+def draft_lines(P):   # 现在的配音里哪些句子是草稿配音（合成声）
+    lj = P.root / 'audio/lines/lines.json'
+    return [f"{r['scene']}_{r['i']}" for r in json.loads(lj.read_text()) if r.get('engine') == 'draft'] if lj.exists() else []
 def check_assets(P):   # 渲染是严格模式：storyboard.assets 登记的文件缺一个就整段失败，先在这里说清楚缺哪个
     lost = [f"{k} → {v['src'] if isinstance(v, dict) else v}" for k, v in (P.SB.get('assets') or {}).items()
             if not k.startswith('_') and isinstance(v, (str, dict)) and not (P.root / (v['src'] if isinstance(v, dict) else v)).exists()]
@@ -167,14 +192,7 @@ class S0(Stage):
     def inputs(self): SB = self.P.SB; return [sb_sub(SB, ['title', 'version', 'characters', 'claims', 'red_flags', 'red_flags_action', 'sources', 'chapters', 'anatomy_checks', 'est']), scenes_sig(SB), fbytes(self.P.tools / 'gen_doc.py')] + [fbytes(f) for f in sorted((self.P.root / 'design').glob('s0_summary_v*.md')) + sorted((self.P.root / 'design').glob('review_head_v*.md'))]
     def outputs(self): SB = self.P.SB; return [self.P.root / 'design' / f"{SB.get('doc_name') or SB['project'] + '_修订稿'}_v{SB['version']}.md"]
     def run(self):
-        SB = self.P.SB
-        for k in ('project', 'title', 'chapters', 'scenes', 'claims', 'red_flags', 'characters', 'style'):
-            if k not in SB: raise RuntimeError(f'storyboard 缺 {k}')
-        chap = {sid for c in SB['chapters'] for sid in c['scenes']}; miss = [s['id'] for s in SB['scenes'] if s['id'] not in chap]
-        if miss: raise RuntimeError(f'场景不在任何章节里：{miss}')
-        ids = {c['id'] for c in SB['claims']}; bad = [(s['id'], c) for s in SB['scenes'] for c in s.get('claims', []) if c not in ids]
-        if bad: raise RuntimeError(f'引用了不存在的口径：{bad}')
-        for w in self.P.C.validate_storyboard(SB, self.P.layout): print('  !!', w)   # 字卡数/字数、解剖场 check_frames、危险信号上卡（只警告）
+        check_sb(self.P)
         self.P.pyt('gen_doc.py')
 
 class S3(Stage):
@@ -202,13 +220,16 @@ class Voice(Stage):
     """用户自己配音：台词本 → 用户录音放进 audio/recordings/ → 导入、处理、回读核对 → audio/lines/lines.json（timeline 直接用）"""
     name = 'voice'
     def inputs(self): SB = self.P.C.sb_strip(self.P.SB); return [lines_sig(SB), sb_sub(SB, ['voices', 'tts']), rec_sig(self.P), *tool_sig(self.P, 'voice.py', 'asr.py', 'align.py'), jdump(self.redo())]
-    def redo(self): return [a for a in self.args if a == '--reimport' or re.match(r's\d+_\d+$', a)]   # 指定重做：不管哈希都重跑（导入缓存只重做这些句子）
+    def redo(self): return [a for a in self.args if a in ('--reimport', '--draft') or re.match(r's\d+_\d+$', a)]   # 指定重做：不管哈希都重跑（导入缓存只重做这些句子）
     def outputs(self): return [self.P.root / 'audio/lines/lines.json']
     def run(self):
         self.P.pyt('voice.py', 'script')
+        if '--draft' in self.args:   # 草稿配音：没录音的句子先用合成声（只用于预演）
+            r = subprocess.run([self.P.py, '-X', 'utf8', '-W', 'ignore', self.P.tools / 'voice.py', 'draft'], cwd=self.P.root, env=self.P.env())
+            if r.returncode: raise RuntimeError('草稿配音没出成（看上面的原因）；也可以不用草稿，直接照台词本录音')
         extra = [a for a in self.args if re.match(r's\d+_\d+$', a) or a in ('--reimport',)]
         r = subprocess.run([self.P.py, '-X', 'utf8', '-W', 'ignore', self.P.tools / 'voice.py', 'import', *extra], cwd=self.P.root, env=self.P.env())
-        if r.returncode == 6: raise WaitRecording('录音还没齐：照 audio/台词本.md 录好，文件放进 audio/recordings/ 再跑 pipeline.py voice')
+        if r.returncode == 6: raise WaitRecording('录音还没齐：照 audio/台词本.md 录好，文件放进 audio/recordings/ 再跑 pipeline.py voice（想先看预演的节奏：pipeline.py voice --draft 用合成声顶上，要联网、要装 edge-tts）')
         if r.returncode: raise RuntimeError(f'录音导入失败（退出码 {r.returncode}）')
         rows = json.loads((self.P.root / 'audio/lines/lines.json').read_text()); ear = set((self.P.SB.get('tts') or {}).get('ear_confirmed') or [])
         bad = [f"{r['scene']}_{r['i']}" for r in rows if r.get('passed') is False and f"{r['scene']}_{r['i']}" not in ear]
@@ -222,7 +243,10 @@ class Timeline(Stage):
     def outputs(self): return [self.P.rdir / 'timeline.json']
     def run(self):
         if not self.est() and not (self.P.root / 'audio/lines/lines.json').exists(): raise RuntimeError('没有 audio/lines/lines.json：先导入录音（pipeline.py voice），或 timeline --estimate 先调画面')
+        check_sb(self.P, warn=False)
         self.P.pyt('timeline.py', *(['--estimate'] if self.est() else []))
+        tl = json.loads((self.P.rdir / 'timeline.json').read_text()); tgt = self.P.SB.get('target_seconds')
+        if tgt and tl['duration'] > tgt * 1.15: print(f"  !! 片长 {tl['duration']:.0f} 秒，超过目标 {tgt} 秒（storyboard.target_seconds）：删减台词，或跟用户确认后改目标")
 
 class Mix(Stage):
     name = 'mix'
@@ -232,15 +256,19 @@ class Mix(Stage):
 
 class Frames(Stage):
     name = 'frames'
-    def inputs(self): return [fbytes(self.P.rdir / 'timeline.json'), fbytes(self.P.layout_file), jdump([s.get('check_frames') for s in self.P.SB['scenes']])] + src_sig(self.P) + [fbytes(self.P.tools / f) for f in ('frames.js', 'checkset.js', 'anatset.js', 'sheet.py')]
+    def inputs(self): return [fbytes(self.P.rdir / 'timeline.json'), fbytes(self.P.layout_file), jdump([s.get('check_frames') for s in self.P.SB['scenes']])] + src_sig(self.P) + [fbytes(self.P.tools / f) for f in ('frames.js', 'checkset.js', 'anatset.js', 'sheet.py', 'emptyscan.py')] + [jdump([s.get('allow_empty') for s in self.P.SB['scenes']])]
     def outputs(self): return [self.P.rdir / 'check_sheet.png', self.P.rdir / 'check/overlay_check.json']
     def run(self):
+        lint_scenes(self.P); check_assets(self.P)
         R = self.P.rdir; rr = self.P.rrel; (R / 'check').mkdir(exist_ok=True)
         for f in (R / 'check').glob('*.png'): f.unlink()
         lst = self.P.node('checkset.js', capture=True).stdout; (R / 'check/list.txt').write_text(lst)
         with self.P.lock('frames', 'frames 抽帧'):
-            self.P.node('frames.js', rr('check'), '--list', rr('check/list.txt'))
+            try: self.P.node('frames.js', rr('check'), '--list', rr('check/list.txt'))
+            except RuntimeError: raise RuntimeError('画面代码运行时出错（上面列出了哪一场、什么错、第几行）；改完再跑 frames')
             self.P.pyt('sheet.py', rr('check'), rr('check_sheet.png'), '6')
+            r = subprocess.run([self.P.py, '-X', 'utf8', self.P.tools / 'emptyscan.py', rr('check')], cwd=self.P.root, env=self.P.env())   # 有的场是不是空的
+            if r.returncode: raise RuntimeError('有的场画面是空的（上面列出了是哪一场）；改完再跑 frames。联系表 ' + rr('check_sheet.png') + ' 可以对照着看')
             if any(s.get('check_frames') for s in self.P.SB['scenes']):
                 (R / 'anat').mkdir(exist_ok=True); [f.unlink() for f in (R / 'anat').glob('*.png')]
                 al = self.P.node('anatset.js', capture=True).stdout; (R / 'anat/list.txt').write_text(al)
@@ -262,7 +290,7 @@ class Animatic(Stage):
         n = latest_preview(self.P) + 1; tag = f'preview_v{n}'; P = self.P; rr = P.rrel
         tl = json.loads((P.rdir / 'timeline.json').read_text())
         if tl.get('estimate'): print('  !! timeline 是 --estimate（没有录音）：预演只看画面节奏，字幕时刻是估的')
-        check_assets(P)
+        lint_scenes(P); check_assets(P)
         with P.lock('render', f'animatic {tag}'): P.node('render.js', tag, arg_workers(self.args), env_extra={'FPS': str(tl['fps']), 'SUB': '1'})
         mp4 = P.rdir / f'{P.project}_{tag}.mp4'; sheet_dir = P.rdir / f'{tag}_frames'; sheet_dir.mkdir(exist_ok=True)
         for f in sheet_dir.glob('*.png'): f.unlink()
@@ -275,15 +303,20 @@ def fstat(p): p = Path(p); return f'{p.stat().st_size}:{p.stat().st_mtime}'.enco
 class Render(Stage):
     name = 'render'
     def tag(self): return next((a.split('=')[1] for a in self.args if a.startswith('--tag=')), self.P.final_tag)
-    def fps_sub(self):   # 竖屏正式版 60 fps + 4 子帧；横屏按 layout_land.submit；环境变量 FPS / SUB 覆盖
+    def fps_sub(self):
+        """画质档位：standard（默认）30 帧 + 2 子帧运动模糊；high 60 帧 + 4 子帧（竖屏；横屏按 layout_land.submit）。--quality=high 或 storyboard.quality；环境变量 FPS / SUB 再覆盖"""
+        q = (argval(self.args, '--quality') or self.P.SB.get('quality') or 'standard').lower()
+        if q not in ('standard', 'high'): raise RuntimeError('--quality 只能是 standard（默认）或 high')
         LS = (self.P.layout.get('submit') or {}) if self.P.land else {}
-        return os.environ.get('FPS', str(LS.get('fps', 30) if self.P.land else 60)), os.environ.get('SUB', str(LS.get('sub', 4) if self.P.land else 4))
+        fps, sub = (30, 2) if q == 'standard' else ((LS.get('fps', 30), LS.get('sub', 4)) if self.P.land else (60, 4))
+        return os.environ.get('FPS', str(fps)), os.environ.get('SUB', str(sub))
     def inputs(self): fps, sub = self.fps_sub(); return [fbytes(self.P.rdir / 'timeline.json'), fbytes(self.P.layout_file), b'mix:' + fsha(self.P.rdir / 'mix.wav'), jdump(self.P.SB.get('cover'))] + src_sig(self.P) + [fbytes(self.P.tools / 'render.js'), self.tag().encode(), fps.encode(), sub.encode()]
     def outputs(self): return [self.P.rdir / f'{self.P.project}_{self.tag()}.mp4']
     def run(self):
         P = self.P; tag = self.tag(); fps, sub = self.fps_sub()
         if not (P.rdir / 'mix.wav').exists() and tag in ('final', 'master'): raise RuntimeError(f'没有 {P.rrel("mix.wav")}：正式版必须先 mix')
-        check_assets(P)
+        lint_scenes(P); check_assets(P)
+        if tag in ('final', 'master') and draft_lines(P): raise WaitRecording('现在的配音是草稿配音（voice --draft 合成的），只能用于预演；正式版要先导入真人录音（pipeline.py voice）')
         ok, why = P.audit_check('pre')
         if not ok:
             if '哈希与当前不符' in why:
@@ -314,7 +347,9 @@ class AuditPre(Stage):
     name = 'audit_pre'
     def inputs(self): P = self.P; n = latest_preview(P); return [jdump(P.C.sb_strip(P.SB)), fbytes(P.rdir / 'timeline.json'), fstat(P.rdir / f'{P.project}_preview_v{n}.mp4')] + src_sig(P) + tool_sig(P, 'audit.py') + [fbytes(f) for f in sorted((P.root / 'design').glob('audit_pre_v*.md'))]
     def run(self):
-        P = self.P; ok, why = P.audit_check('pre')
+        P = self.P; dl = draft_lines(P)
+        if dl: raise WaitRecording(f"预演用的是草稿配音（{len(dl)} 句合成声）：可以先看节奏、改画面，但预演审核和 S6a 确认要等真人录音导入之后。照 audio/台词本.md 录好放进 audio/recordings/，再跑 pipeline.py voice")
+        ok, why = P.audit_check('pre')
         if ok: print('  ' + why); return
         if '哈希与当前不符' in why:
             try: P.audit('diff')
@@ -435,6 +470,76 @@ def cmd_status(P):
         flag = 'ok  ' if s and s.get('ok') else ('REC ' if s.get('wait') == 'recording' else 'WAIT' if s.get('wait') else 'FAIL') if s else '—   '
         print(f"  {n:10s} {flag} {s.get('at', '') if s else ''} {s.get('seconds', '') if s else ''}s {('ERR ' + s.get('error', '').splitlines()[0][:120]) if s and not s.get('ok') and s.get('error') else ''}")
 
+# ---------------- 后台运行：长命令别卡在一次工具调用里 ----------------
+def pid_alive(pid):
+    if os.name == 'nt':
+        import ctypes
+        h = ctypes.windll.kernel32.OpenProcess(0x1000, False, int(pid))
+        if not h: return False
+        code = ctypes.c_ulong(); ctypes.windll.kernel32.GetExitCodeProcess(h, ctypes.byref(code)); ctypes.windll.kernel32.CloseHandle(h); return code.value == 259
+    try: os.kill(int(pid), 0); return True
+    except OSError: return False
+def bg_paths(root): r = Path(root) / 'render'; r.mkdir(parents=True, exist_ok=True); return r / 'bg_job.json', r / 'bg_job.log'
+def bg_job(root):
+    jf, _ = bg_paths(root)
+    try: j = json.loads(jf.read_text(encoding='utf-8'))
+    except (OSError, ValueError): return None
+    if not j.get('done') and not pid_alive(j.get('pid', -1)): j.update(done=True, exit=j.get('exit', 1), died=True)   # 进程没了却没写结果：被杀掉或崩了
+    return j
+def bg_start(argv, root):
+    j = bg_job(root)
+    if j and not j.get('done'): print(f"已有后台任务在跑（{j['cmd']}，{j['started']} 开始）：先用 wait 等它结束"); return 4
+    jf, lf = bg_paths(root); args = [a for a in argv if a != '--bg']
+    env = dict(os.environ, KEPU_BG_JOB=str(jf), PYTHONUNBUFFERED='1'); cmd = [sys.executable, '-X', 'utf8', '-u', str(Path(__file__).resolve()), *args, '--bg-child']
+    with open(lf, 'w', encoding='utf-8') as log:
+        kw = dict(stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT, env=env, cwd=os.getcwd())
+        if os.name == 'nt':
+            flags = 0x08000000 | 0x00000200   # CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP
+            try: pr = subprocess.Popen(cmd, creationflags=flags | 0x01000000, **kw)   # 再加 CREATE_BREAKAWAY_FROM_JOB：调用方结束时不被一起关掉
+            except OSError: pr = subprocess.Popen(cmd, creationflags=flags, **kw)
+        else: pr = subprocess.Popen(cmd, start_new_session=True, **kw)
+    jf.write_text(json.dumps({'pid': pr.pid, 'cmd': ' '.join(a for a in args if not Path(a).is_dir()), 'started': now(), 'done': False}, ensure_ascii=False), encoding='utf-8')
+    me = Path(__file__).resolve()
+    print(f'已在后台开始：{" ".join(a for a in args if not Path(a).is_dir())}\n  看进度 / 等结果：python "{me}" wait "{root}"（最多等 90 秒就返回；退出码 7 = 还在跑，再 wait 一次）\n  日志：{lf}')
+    return 0
+def bg_child(argv):
+    argv = [a for a in argv if a != '--bg-child']; jf = os.environ.get('KEPU_BG_JOB'); code = 1
+    try: code = main(argv)
+    except SystemExit as e: code = e.code if isinstance(e.code, int) else 1
+    except BaseException:
+        import traceback; traceback.print_exc()
+    finally:
+        try:
+            j = json.loads(Path(jf).read_text(encoding='utf-8')); j.update(done=True, exit=code, ended=now()); Path(jf).write_text(json.dumps(j, ensure_ascii=False), encoding='utf-8')
+        except Exception: pass
+    return code
+EXIT_MEAN = {0: '完成', 2: '失败（看日志里 ✗ 那几行）', 3: '停在 HARD 点，等用户确认', 4: '参数错', 5: '等审核', 6: '等用户录音'}
+def bg_tail(root, n=14):
+    _, lf = bg_paths(root)
+    try: lines = [l for l in lf.read_text(encoding='utf-8', errors='replace').splitlines() if l.strip()]
+    except OSError: return []
+    keep = [l for l in lines if l.lstrip().startswith(('✗', '✓', '▶', '⏸', '■', '!!', '—')) or 'frames,' in l or 'QA ' in l]
+    return (keep or lines)[-n:]
+def cmd_wait(root, args):
+    tmo = float(argval(args, '--timeout') or 90); t0 = time.time(); j = bg_job(root)
+    if not j: print('没有后台任务（加 --bg 启动的才有）'); return 4
+    while not j.get('done') and time.time() - t0 < tmo: time.sleep(2); j = bg_job(root)
+    for l in bg_tail(root): print('  ' + l[:300])
+    if not j.get('done'): print(f"… 还在跑：{j['cmd']}（{j['started']} 开始）。再跑一次 wait 接着等"); return 7
+    code = j.get('exit', 1)
+    print(f"后台任务结束：{j['cmd']} → 退出码 {code}（{'进程中途没了：被关掉或崩溃，看日志' if j.get('died') else EXIT_MEAN.get(code, '失败')}）；完整日志 {bg_paths(root)[1]}")
+    return code
+def cmd_check(P):
+    """只检查不渲染：分镜 + 场景代码。改完任何东西都可以先跑它（1–2 秒）"""
+    bad = 0
+    try: check_sb(P)
+    except RuntimeError as e: print('✗', e); bad = 1
+    if bad == 0 or True:
+        try: lint_scenes(P)
+        except RuntimeError as e: print('✗', e); bad = 1
+    print('检查通过：分镜和场景代码都没有错误' if not bad else '有错误：按上面的提示改完再跑 check')
+    return 2 if bad else 0
+
 # ---------------- main ----------------
 def main(argv):
     if not argv or argv[0] in ('-h', '--help'): print(__doc__); return 0
@@ -450,8 +555,17 @@ def main(argv):
     rest = [a for a in rest if not a.startswith('--until=')]
     def is_proj(a): return not a.startswith('--') and Path(a).is_dir() and (Path(a) / 'design').is_dir()
     proj = next((a for a in rest if is_proj(a)), None); args = [a for a in rest if a != proj and a != '--force']
-    P = Project(proj or Path.cwd(), orient)
-    if cmd == 'status': cmd_status(P); return 0
+    root = Path(proj or Path.cwd()).resolve()
+    if cmd == 'wait': return cmd_wait(root, args)
+    if '--bg' in argv:
+        if not (root / 'design').is_dir(): die(f'{root} 不是专题目录（没有 design/）')
+        return bg_start(argv, root)
+    P = Project(root, orient)
+    if cmd == 'check': return cmd_check(P)
+    if cmd == 'status':
+        cmd_status(P); j = bg_job(P.root)
+        if j: print(f"  后台任务：{j['cmd']}  " + (f"已结束，退出码 {j.get('exit')}" if j.get('done') else f"进行中（{j['started']} 开始；用 wait 看进度）"))
+        return 0
     if cmd == 'clean': return subprocess.call([sys.executable, '-X', 'utf8', str(P.tools / 'cleanup.py'), *args], cwd=P.root, env=P.env())
     if cmd == 'export_subs': return subprocess.call([sys.executable, '-X', 'utf8', str(P.tools / 'export_subs.py'), *args], cwd=P.root, env=P.env())
     if cmd == 'run': return run_until(P, until or 'qa', args, force, start=next((a.split('=')[1] for a in args if a.startswith('--from=')), None))
@@ -461,6 +575,6 @@ def main(argv):
         if r in CODE: return CODE[r]
         if r != 'dry' and cmd in HARD_AFTER and not P.confirmed(HARD_AFTER[cmd]): return P.hard_stop(HARD_AFTER[cmd])
         return 0
-    die(f'未知子命令 {cmd}；可用：setup new run status clean export_subs {" ".join(STAGES)}（--orient land 横屏）')
+    die(f'未知子命令 {cmd}；可用：setup new check run wait status clean export_subs {" ".join(STAGES)}（--orient land 横屏；长命令加 --bg 放后台）')
 
-if __name__ == '__main__': sys.exit(main(sys.argv[1:]))
+if __name__ == '__main__': sys.exit(bg_child(sys.argv[1:]) if '--bg-child' in sys.argv else main(sys.argv[1:]))

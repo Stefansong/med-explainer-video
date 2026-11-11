@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """用户自己配音：台词本 → 录音导入 → audio/lines/{scene}_{i}.wav + lines.json（timeline.py 直接用）。
 
-  python tools/voice.py script              出 audio/台词本.md（按角色分组：每句的文件名、台词、读音提示、语气、参考时长）
+  python tools/voice.py script              出 audio/台词本.md / .docx（按角色分组：每句的文件名、台词、读音提示、语气、参考时长）
+  python tools/voice.py draft [--all]       草稿配音：还没录音的句子先用合成声顶上（audio/draft/<句>.mp3），只为预演对节奏；正式成片不许用（render final 会拒绝）
+        用微软 Edge 在线朗读（pip 包 edge-tts，要联网，台词文本会发给这个在线服务——先问过用户）。voices[who].draft_voice 可指定音色。
   python tools/voice.py import [s03_2 …] [--reimport]
         读 audio/recordings/ 里的录音（wav / m4a / mp3 / aac / flac / ogg 都行），四种放法任选，同一句以前面的为准：
           s03_2.m4a          一句一个文件（文件名 = 场景_句号）
@@ -11,6 +13,7 @@
         → 转 48 kHz 单声道、轻度降噪、切掉首尾静音、句中长停顿压短、停顿处压底噪、响度统一 −16 LUFS
         → whisper 回读和台词逐字比（拼音相似度、长度比、关键词、多出来的语气词）→ 逐字时刻
         录音不齐：已有的照常处理并缓存，缺的列出来，退出码 6（不写 lines.json，timeline 用不了）。
+        某句没有录音、但 audio/draft/ 里有草稿配音：用草稿顶上（lines.json 里 engine = draft）；录音补上后重新导入就自动换成录音。
 storyboard 里与配音相关的字段：voices[who].actor（谁来配）/ desc（嗓音要求）；tts.asr_prompt（回读提示词，只写领域）；tts.must（必须读对的关键词拼音）；
 tts.min_pinyin（拼音相似度门限，默认 0.92）；tts.ear_confirmed（回读没过、但人耳听过没问题的句子）；design.say_overrides / lines[].say（读音提示）。"""
 import json, re, sys, subprocess, difflib, hashlib
@@ -20,7 +23,7 @@ from _common import ROOT, load_sb, asr_prompt, emo_notes
 from pypinyin import lazy_pinyin, pinyin, Style
 
 SB = load_sb()
-REC = ROOT / 'audio/recordings'; OUT = ROOT / 'audio/lines'; WORK = OUT / 'work'
+REC = ROOT / 'audio/recordings'; DRAFT = ROOT / 'audio/draft'; OUT = ROOT / 'audio/lines'; WORK = OUT / 'work'
 EXTS = ('.wav', '.m4a', '.mp3', '.aac', '.flac', '.ogg', '.opus', '.wma', '.amr', '.mp4', '.mov')
 TTS = SB.get('tts') or {}; MUST = TTS.get('must') or {}; MIN_PY = float(TTS.get('min_pinyin', 0.92))
 SAY = (SB.get('design') or {}).get('say_overrides') or {}
@@ -72,6 +75,10 @@ def cmd_script():
         L.append('')
     (ROOT / 'audio').mkdir(exist_ok=True); REC.mkdir(parents=True, exist_ok=True)
     f = ROOT / 'audio/台词本.md'; f.write_text('\n'.join(L) + '\n'); print(f'台词本：{f.relative_to(ROOT).as_posix()}（{len(LINES)} 句，{len(rows)} 个角色）')
+    try:
+        from md2docx import convert
+        if convert(f): print('        audio/台词本.docx（发给配音的人用）')
+    except Exception as e: print(f'  （台词本 docx 没出成：{e}）')
 
 # ---------------- 音频处理 ----------------
 def ff(args): subprocess.run(['ffmpeg', '-v', 'error', '-y', *map(str, args)], check=True)
@@ -185,6 +192,9 @@ def find_sources():
                     grp = groups.setdefault(key, [kid(s, j) for s, j, l in LINES if members(s, l['who'])])
                     plan[k] = (files[key], grp.index(k), len(grp))
                 break
+        if k not in plan:   # 这句没有录音：有草稿配音就先用草稿
+            for ext in ('.mp3', '.wav'):
+                if (DRAFT / (k + ext)).exists(): plan[k] = (DRAFT / (k + ext), None); break
     return plan, files
 
 def sig(f, extra=''): st = f.stat(); return f'{f.name}:{st.st_size}:{int(st.st_mtime)}:{extra}'
@@ -196,7 +206,7 @@ def cmd_import(argv):
     OUT.mkdir(parents=True, exist_ok=True); WORK.mkdir(parents=True, exist_ok=True)
     cache_f = OUT / 'import_cache.json'; cache = json.loads(cache_f.read_text()) if cache_f.exists() else {}
     plan, files = find_sources(); missing = [kid(s, i) for s, i, _ in LINES if kid(s, i) not in plan]
-    used = {p[0].stem for p in plan.values()}; unknown = [n for n in files if n not in used]
+    used = {p[0].stem for p in plan.values() if p[0].parent != DRAFT}; unknown = [n for n in files if n not in used]
     if unknown: print(f'  !! audio/recordings/ 里这些文件对不上任何台词，没用：{unknown}（文件名用台词本第一列、场景号、或角色代号）')
     split_cache = {}; rows = []; EAR = set(TTS.get('ear_confirmed') or [])
     prompt = asr_prompt(SB)
@@ -228,7 +238,7 @@ def cmd_import(argv):
         from asr import transcribe
         res = transcribe(wav, initial_prompt=prompt, word_timestamps=True)
         j = judge(ln, k, wav, res); ct, ce = align(ln['text'], wav, asr_result=res, prompt=prompt)
-        row = {'scene': sid, 'i': i, 'who': ln['who'], 'emo': ln.get('emo'), 'engine': 'recording', 'voice': (V.get(ln['who']) or {}).get('actor') or ln['who'], 'text': ln['text'], 'say': say_text(ln),
+        row = {'scene': sid, 'i': i, 'who': ln['who'], 'emo': ln.get('emo'), 'engine': 'draft' if f.parent == DRAFT else 'recording', 'voice': (V.get(ln['who']) or {}).get('actor') or ln['who'], 'text': ln['text'], 'say': say_text(ln),
                'file': wav.relative_to(ROOT).as_posix(), 'source': f.name + ('' if src[1] is None else f' 第 {src[1] + 1}/{src[2]} 段'), 'seconds': j['seconds'], 'tempo': 1.0, 'seed': None,
                'passed': j['ok'], 'asr': j['asr'], 'hanzi_match': j['hz'], 'len_ratio': j['ratio'], 'pinyin_match': j['py'], 'tone_match': j['tone'], 'cps': j['cps'], 'note': j['note'], 'f0': None,
                'ct': [round(x, 3) for x in ct], 'ce': [round(x, 3) for x in ce]}
@@ -245,11 +255,44 @@ def cmd_import(argv):
         sys.exit(6)
     (OUT / 'lines.partial.json').unlink(missing_ok=True)
     (OUT / 'lines.json').write_text(json.dumps(rows, ensure_ascii=False, indent=1))
-    bad = [f"{r['scene']}_{r['i']}" for r in rows if not r['passed'] and not r['ear_ok']]
+    bad = [f"{r['scene']}_{r['i']}" for r in rows if not r['passed'] and not r['ear_ok'] and r['engine'] != 'draft']
     tot = sum(r['seconds'] for r in rows); chars = sum(len(norm(r['text'])) for r in rows)
     print(f'\n配音 {len(rows)} 句，总长 {tot:.1f} s，平均 {chars / max(1, tot):.1f} 字/秒；回读没过且未人耳确认：{bad or "无"}')
+    nd = sum(r['engine'] == 'draft' for r in rows)
+    if nd: print(f'  其中 {nd} 句是草稿配音（合成声）：只能出预演；正式成片前照 audio/台词本.md 录好这些句子再导入')
+
+# ---------------- 草稿配音 ----------------
+DRAFT_VOICES = {'narrator': 'zh-CN-XiaoxiaoNeural'}; DRAFT_POOL = ['zh-CN-YunxiNeural', 'zh-CN-XiaoyiNeural', 'zh-CN-YunjianNeural', 'zh-CN-YunyangNeural']
+def draft_voice(who):
+    v = (V.get(who) or {}).get('draft_voice')
+    if v: return v
+    if who in DRAFT_VOICES: return DRAFT_VOICES[who]
+    others = [w for w in dict.fromkeys(ln['who'] for _, _, ln in LINES) if w not in DRAFT_VOICES and not (V.get(w) or {}).get('draft_voice')]
+    return DRAFT_POOL[others.index(who) % len(DRAFT_POOL)]
+def cmd_draft(argv):
+    try: import edge_tts   # noqa: F401
+    except ImportError: sys.exit('草稿配音要装 edge-tts：python -m pip install edge-tts（要联网；台词文本会发给微软的在线朗读服务）。不想用就直接录音。')
+    plan, _ = find_sources(); DRAFT.mkdir(parents=True, exist_ok=True)
+    meta_f = DRAFT / 'draft.json'; meta = json.loads(meta_f.read_text()) if meta_f.exists() else {}
+    n = fail = 0
+    for sid, i, ln in LINES:
+        k = kid(sid, i); out = DRAFT / f'{k}.mp3'; voice = draft_voice(ln['who']); want = f"{voice}|{say_text(ln)}"
+        real = k in plan and plan[k][0].parent != DRAFT
+        if real and '--all' not in argv:   # 已有真录音：不出草稿，旧草稿删掉
+            out.unlink(missing_ok=True); meta.pop(k, None); continue
+        if out.exists() and meta.get(k) == want: continue
+        for attempt in range(3):   # 在线服务偶尔断一下：重试两次
+            r = subprocess.run([sys.executable, '-m', 'edge_tts', '--voice', voice, '--rate=-8%', '--text', say_text(ln), '--write-media', str(out)], capture_output=True, text=True)
+            if r.returncode == 0 and out.exists() and out.stat().st_size >= 800: break
+            import time; time.sleep(2 + 3 * attempt)
+        if r.returncode or not out.exists() or out.stat().st_size < 800:
+            fail += 1; out.unlink(missing_ok=True); print(f"  !! {k} 草稿配音没出成：{(r.stderr or '').strip().splitlines()[-1][:160] if (r.stderr or '').strip() else '没有声音返回'}"); continue
+        meta[k] = want; n += 1; print(f'  {k} {ln["who"]:10s} 草稿 {voice}', flush=True)
+    meta_f.write_text(json.dumps(meta, ensure_ascii=False, indent=1))
+    print(f'草稿配音：新出 {n} 句' + (f'，{fail} 句失败（多半是没联网，过会儿再跑）' if fail else '') + '。接着跑 voice（导入）。草稿只用于预演，正式成片必须换成真人录音。')
+    if fail: sys.exit(2)
 
 if __name__ == '__main__':
     a = sys.argv[1:]
-    if not a or a[0] not in ('script', 'import'): sys.exit(__doc__)
-    cmd_script() if a[0] == 'script' else cmd_import(a[1:])
+    if not a or a[0] not in ('script', 'import', 'draft'): sys.exit(__doc__)
+    {'script': lambda: cmd_script(), 'import': lambda: cmd_import(a[1:]), 'draft': lambda: cmd_draft(a[1:])}[a[0]]()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """timeline + 逐句配音 → 程序化 BGM（木琴/拨弦/铺底/贝斯，轻快大调；可按 storyboard.audio.bgm 指定小调段、安静段）
 + 音效（字卡 pop、转场水浪 是通用的；其余音效由 storyboard.audio.sfx 按 cue 声明）→ 人声闪避混音 → render/mix.wav / mix.m4a（-16 LUFS）+ 分轨 stem_*.wav（ORIENT=land：render/land/，按横屏 timeline 混）
-片头语音标识（GB 45438 ③，只对纯音频作品；默认关）：cover.ai_voice_on 为 true 时把 audio/lines/s00_ai.wav（tools/make_ai_voice.py）放在 cover.ai_voice_at（默认 0.35 s）。
+片头语音标识（GB 45438 ③，只对纯音频作品；默认关）：cover.ai_voice_on 为 true 时把 audio/lines/s00_ai.wav（自己录一句“本视频含人工智能生成内容”）放在 cover.ai_voice_at（默认 0.35 s）。
 人声链（bph 10-13/14 定稿）：低通 11.5 kHz 去重采样镜像 → 轻度分频去齿音 → 停顿彻底静音 → 预先 0.3 s 闪避、保持 0.6 s。
 storyboard.audio 示例：
   "bgm": {"bpm": 104, "minor": [["s06", "night", "f1"]], "quiet": [["s01", null, null]]}   区间 = [场, 起 cue（null=场首）, 止 cue（null=场尾）]

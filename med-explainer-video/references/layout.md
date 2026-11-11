@@ -54,7 +54,7 @@
 
 **只用开源字体，不回退系统字体：逐字核对缺字，缺字在 QA 门报出。** `layout.json` 四个角色现在只写 `"HeiTiSub"` / `"DeYiHei","HeiTiSub"`（`ref` 由苹方首选改为黑体子集（思源黑体裁剪） Regular，片尾文献/署名字形随之变成黑体子集（思源黑体裁剪）；其余画面逐像素不变）。浏览器遇到字体里没有的字仍会回退系统字体（声明不声明 `sans-serif` 都一样），所以防线是 `tools/check_fonts.py`：把所有上屏文字（章节、片名、字卡、字幕块、名牌、片尾、文献、署名、封面、AI 标识）按角色逐字查 `fonts.files` 各字体的 cmap，缺字列出字、U+ 码、角色、该用的字体文件和出现位置；箭头“→”是线条画的不查，其它符号照查；`fonts.*` 里声明了不在 `files` 里的字体族也算系统回退。`qa.py` 竖屏横屏都按 `qa_gate.font_fallback`（0）判：缺字、系统回退声明、渲染页字体未全部 loaded 任一即不通过。
 
-## 横屏投稿版 `layout_land.json`（2026-10-21，T6）
+## 横屏版 `layout_land.json`
 
 画幅 1920×1080；`ORIENT=land` 时 `tools/_common` 自动选它，产物全在 `render/land/`。改版式只改这里：
 - `stage {x 60, y 104, h 880, design_top 236, design_bottom 1236, design_width 1080}`：场景仍按竖屏舞台设计，engine 映射到左侧矩形（k = 0.88），以舞台中心呼吸；`L.EXT = {x0, x1}` 让 `L.bg` 和场景自定义背景（`L.XR()`）向右铺满整幅。
@@ -64,5 +64,5 @@
 - `subtitle {y 1022, size 64, center_x 960, max_width 1500, max_chars 13, name_size 34}`；`footer.waves [980, 1040]`；`safe.right_x 1920`（网页播放器无侧栏）。
 - `outro {center_x 1510, slogan_y 300, slogan_size 54, block_y 400, max_width 720, fit true, credit_line 50}`：片尾文字在右半幅；有 sref 文献页时片尾不重复 `outro.references`。
 - `refs {x 80, width 1760, top 160, bottom_margin 50, title 90/96/46 px, size_max 34 → size_min 15, line_height 1.34, gap 0.34, bg #FFF8EE, per_page_default 10, page_seconds_default 5.0}`：参考文献页，字号从大往小试到能装进 `references_pages` 页；装不下记 overflow（qa 失败）。
-- `fonts.*.family` 只写黑体子集（思源黑体裁剪）/得意黑（投稿须知：只用开源字体、不回退系统字体）；`qa_gate.font_fallback 0`。
+- `fonts.*.family` 只写黑体子集（思源黑体裁剪）/得意黑（只用开源字体、不回退系统字体）；`qa_gate.font_fallback 0`。
 - `submit {target_mb 46, max_mb 50, fps 30, sub 4, min_width 1280, min_height 720, ai_mark_min_seconds 2.0}`。

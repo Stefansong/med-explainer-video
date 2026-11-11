@@ -32,14 +32,14 @@ storyboard 主要字段（模板里每段都有 `_comment`）：
 | `cues{}` | `{名字: [句号, "锚词"]}`：画面事件锚点，场景代码用 `A.cue(名字)` |
 | `check_frames[]` | `"cue:x+0.6"`、`"label:2+0.8"`、`"end-1.0"`：解剖场要声明，抽帧核对用 |
 | `assets{}` | `{id: {src}}`：3D 立绘 `sp_*`、道具图标 `ic_*`（`tools/cutout.py` 自动登记） |
-| `voices{}` / `tts{}` | 谁来配、嗓音要求；回读提示词、关键词、门限、人耳确认名单（见 voice_recording.md） |
+| `voices{}` / `tts{}` | 谁来配、嗓音要求（每个有台词的角色都要有一项；S3 之前 `actor` 可以先写“待定”）；回读提示词、关键词、门限、人耳确认名单（见 voice_recording.md） |
 | `audio{}` | 配乐（bpm、小调段、安静段）与音效（见 sfx.md） |
 | `outro{}` / `credits[]` / `disclaimer` / `cover{}` | 片尾口号、AI 说明、片尾短参考；署名；免责声明；封面 |
 | `status{}` | 三个 HARD 点。只有用户在对话里确认后才写 `confirmed: true` |
 
 检查清单：每条医学表述在口径表里有编号和出处；危险信号齐全且每条在某张字卡上；每场有 beat / hook / visual；字卡与 cue 锚到台词里的词；单张字卡 ≤ 14 字；同屏字卡 ≤ 3 张（`max_labels`）；普通卡停留 ≥ 2.5 s、危险信号卡 ≥ 3.5 s（timeline 自动算 `card_stays`，不够会延长场尾或报警）；声明 `max_labels: 3` 的场人物脚底 y ≤ 1190；s01 前 5 秒设计坐标 y 236–420 不放主体（片名会盖住）；解剖场至少 2–3 个 `check_frames`；估算片长按每秒 4.5 字。
 
-`python $P s0 <专题>` 校验 storyboard 并生成修订稿（有 pandoc 时另出 docx）。用户看口径表、危险信号、每场节拍；通常 1–2 轮修订。
+`python $P check <专题>` 先把分镜的错误清零（JSON 写坏、字卡 / cue 的锚词不在那句台词里、角色或图没登记、危险信号没上卡…，每条都说怎么改）；`python $P s0 <专题>` 生成修订稿（md + docx）。用户看口径表、危险信号、每场节拍；通常 1–2 轮修订。估算片长超过 `target_seconds` 的 115% 会提醒，先删台词再往下走。
 
 ## S3 角色定稿 / 场景 / 配音分工【HARD】
 
@@ -47,7 +47,7 @@ storyboard 主要字段（模板里每段都有 `_comment`）：
 
 ## 配音
 
-见 voice_recording.md。`voice` 阶段：出台词本 → 录音不齐就停（退出码 6）→ 齐了就导入。导入结果 `audio/lines/lines.json` 每句有 `passed`（回读核对）、`asr`（回读文字）、`cps`（字/秒）、`note`（问题说明）、`ct` / `ce`（逐字起止秒）。
+见 voice_recording.md。`voice` 阶段：出台词本（md + docx）→ 录音不齐就停（退出码 6）→ 齐了就导入。`voice --draft` 用合成声顶替还没录的句子，只够出预演：预演审核和正式渲染会等真人录音（退出码 6）。导入结果 `audio/lines/lines.json` 每句有 `passed`（回读核对）、`asr`（回读文字）、`cps`（字/秒）、`note`（问题说明）、`ct` / `ce`（逐字起止秒）。
 
 ## timeline / mix
 
@@ -57,8 +57,10 @@ storyboard 主要字段（模板里每段都有 `_comment`）：
 ## 动画与抽帧
 
 - 场景函数 `SC.<id> = (c, A) => {…}` 在设计坐标里画（宽 1080，主舞台 y 236–1236），引擎整体映射到舞台。`A.t` 场内秒、`A.T` 场长、`A.ln(i)` 第 i 句 `{start, end}`、`A.cue(name)`、`A.lab(k)` 第 k 张字卡时刻、`A.img(id)` 素材。
-- 通用镜头：`src/shots.js`（`SH.bg` 背景、`SH.floor`、`SH.home`、`SH.clinic` 场景底、`SH.SP` 立绘、`SH.spX` 立绘收进安全线、`SH.IC` 图标、`SH.xf` 两张立绘交叉淡化换姿势、`SH.drop` 掉落、`SH.card` 卡片）；道具 `src/props.js`（`PR.clock`、`PR.window` 等）；绘图工具 `src/lib.js`（`L.*` 缓动、形状）。
+- 通用镜头：`src/shots.js`（`SH.full` 满幅镜头、`SH.bg` 背景、`SH.floor`、`SH.home`、`SH.clinic` 场景底、`SH.SP` 立绘、`SH.spX` 立绘收进安全线、`SH.IC` 图标、`SH.xf` 两张立绘交叉淡化换姿势、`SH.steps` 分步演示、`SH.spot` 圈重点、`SH.arrow` 箭头、`SH.level` 等高线、`SH.zoomImg` 局部放大、`SH.drop` 掉落、`SH.card` 卡片；完整列表见 api.md）；道具 `src/props.js`（`PR.clock`、`PR.window` 等）；绘图工具 `src/lib.js`（`L.*` 缓动、形状）。
 - 每帧是时间的纯函数：不用 `Math.random()`（用 `L.rand(seed)` 之类的确定性函数）、不用 `Date`。
+- 写完一场先 `python $P check <专题>`（语法、函数名、图 id、cue、字卡下标；`frames` / `animatic` / `render` 开头也会自动跑）。
+- `frames` 还会做空画面检查（`tools/emptyscan.py`）：某一场一半以上的抽帧舞台上只有底色就失败；确实要留白的场在 storyboard 里写 `"allow_empty": true`。
 - `frames`：每句 35% / 85%、每张字卡出现后 0.8 s、每个 cue 后 0.5 s、场末各抽一帧 → `render/check_sheet.png`；声明了 `check_frames` 的场另出 `render/anat_sheet.png`。叠字层自检（字卡压字幕、越过安全区等）有硬错就失败，样本在 `render/check/overlay_check.json`。
 - 细看：`node "$SKILL/scripts/tools/strip.js" "src/player.html?…" t0:t1 out.png` 逐帧条带；`tools/crop.js` 裁局部。
 
@@ -74,7 +76,7 @@ S6a 后又改了任何东西（storyboard、timeline、画面代码、版式）�
 
 ## render / qa
 
-- `render`：60 fps + 4 子帧运动模糊（字幕字卡不模糊），BT.709 电视范围；有 `cover` 时成片第一帧即封面，另出 `render/<project>_cover_9x16.png`。
+- `render`：默认标准画质 30 fps + 2 子帧运动模糊；`--quality high`（或 storyboard 写 `"quality": "high"`）60 fps + 4 子帧。字幕字卡不模糊，BT.709 电视范围；有 `cover` 时成片第一帧即封面，另出 `render/<project>_cover_9x16.png`。
 - QA 门（`render/<project>_final.qa.json`，任一项不过退出码 2）：字幕与台词逐字一致；逐句回读拼音相似度 ≥ 0.97（`qa.asr_min` 可调）；字幕开口点 ≤ 100 ms 的块 ≥ 95%；响度 −16 ± 1.5 LUFS；分辨率 / 时长 / 像素格式；危险信号逐卡上屏；字卡停留；舞台换镜暗谷；AI 标识（字高 ≥ 短边 5%、从第 0 帧起 ≥ 2 s）；字体缺字。
 
 ## audit_post（成片审核）→ deliver → clean
@@ -90,3 +92,7 @@ S6a 后又改了任何东西（storyboard、timeline、画面代码、版式）�
 ## 发布
 
 标题 ≤ 30 字备 3 个、简介、话题、封面（9:16，横屏 16:9）；发布时勾选平台的“AI 生成”声明；简介不写商品名、医院名；最好用医生或机构认证账号发。
+
+## 后台运行
+
+`voice`（导入）、`animatic`、`render`、`run` 都可能超过一次工具调用的时限。加 `--bg` 放后台，立刻返回；`python $P wait <专题> [--timeout=90]` 等并打印最近进度，退出码 7 = 还在跑（继续 `wait`），其余退出码就是任务自己的结果。进度和日志在 `render/bg_job.log`，状态在 `render/bg_job.json`；同一专题同时只允许一个后台任务。

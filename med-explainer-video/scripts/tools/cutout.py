@@ -44,6 +44,12 @@ def main(a):
             ring = ndimage.binary_dilation(bgmask, iterations=2) & ~bgmask   # 主体外缘 2 px：按色差做半透明
             alpha[ring] = np.clip((d[ring] - tol) / tol, 0, 1) * 255
         if (alpha < 10).mean() < 0.15: print(f'!! 背景只认出 {(alpha < 10).mean():.0%}：底色不纯或和主体太像，换纯色底重出，或调 --tol')
+        if bg.max() - bg.min() > 120:
+            # 主体边缘 6 px 里不透明、但染了底色的像素（白头发的粉边、深色衣服的紫边）：按键值估出混进了多少底色，把那部分减掉、亮度还原。
+            # 只动边缘这一圈，主体内部本来偏粉的颜色（腮红、粉色衣服）不动
+            band = ndimage.binary_dilation(alpha < 128, iterations=6) & (alpha >= 255)
+            if band.any():
+                t = np.clip(a_[band], 0.6, 1.0)[:, None]; rgb[band] = np.clip((rgb[band] - (1 - t) * bg) / t, 0, 255)
         k = (alpha > 0) & (alpha < 255)   # 去溢色：半透明像素减掉背景色的成分
         if k.any():
             t = (alpha[k] / 255.0)[:, None]; rgb[k] = np.clip((rgb[k] - (1 - t) * bg) / np.maximum(t, 0.05), 0, 255)
@@ -58,7 +64,10 @@ def main(a):
     x0, x1, y0, y1 = max(0, xs.min() - 6), min(px.shape[1], xs.max() + 7), max(0, ys.min() - 6), min(px.shape[0], ys.max() + 7)
     out_im = Image.fromarray(px.astype(np.uint8), 'RGBA').crop((x0, y0, x1, y1))
     rel = f"assets/lib/{'props' if kind == 'icon' else 'characters/sprites'}/{iid}.png"; out = ROOT / rel; out.parent.mkdir(parents=True, exist_ok=True)
-    if out.exists(): sys.exit(f'{rel} 已存在：定稿素材不覆盖，换个 id（加 _v2）')
+    if out.exists():   # 定稿素材不覆盖。文件在、但 storyboard 里的登记丢了（重写过 storyboard）→ 补登记，不重抠
+        SB = load_sb()
+        if '--no-register' not in a and iid not in (SB.get('assets') or {}): SB.setdefault('assets', {})[iid] = {'src': rel}; save_sb(SB); print(f'{rel} 已存在，没有覆盖；storyboard.assets.{iid} 的登记丢了，已补上'); return
+        sys.exit(f'{rel} 已存在：定稿素材不覆盖。要换图就换个 id（加 _v2）；只是想用它，场景代码里直接写这个 id 就行')
     out_im.save(out)
     chk = ROOT / 'render/cutout' / f'{iid}_check.png'; chk.parent.mkdir(parents=True, exist_ok=True)   # 棋盘格预览
     W, H = out_im.size; g = np.indices((H, W)).sum(0) // 16 % 2; board = Image.fromarray(np.where(g[..., None], 205, 245).repeat(3, -1).astype(np.uint8)).convert('RGBA')

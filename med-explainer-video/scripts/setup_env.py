@@ -28,7 +28,7 @@ if sys.version_info < (3, 9): row('Python', False, f'{platform.python_version()}
 row('Python', True, f'{platform.python_version()}（{sys.executable}）')
 def missing_py():
     need = {'numpy': 'numpy', 'scipy': 'scipy', 'soundfile': 'soundfile', 'pypinyin': 'pypinyin', 'jieba': 'jieba', 'PIL': 'pillow', 'fontTools': 'fonttools',
-            'filelock': 'filelock', 'send2trash': 'send2trash', 'imageio_ffmpeg': 'imageio-ffmpeg', 'faster_whisper': 'faster-whisper'}
+            'filelock': 'filelock', 'send2trash': 'send2trash', 'imageio_ffmpeg': 'imageio-ffmpeg', 'faster_whisper': 'faster-whisper', 'docx': 'python-docx'}
     out = []
     for mod, pkg in need.items():
         try: __import__(mod)

@@ -1,5 +1,5 @@
 // 工具共用：项目根、画幅（ORIENT）、产物目录、storyboard 定位、layout 路径、Chrome 路径、player 页 URL。专题常量一律不写在这里，全从 storyboard / layout.json 读。
-// 画幅：ORIENT=port（默认，竖屏，产物 render/）或 ORIENT=land（横屏投稿版，版式 layout_land.json，产物全部在 render/land/，竖屏产物不受影响）。
+// 画幅：ORIENT=port（默认，竖屏，产物 render/）或 ORIENT=land（横屏，版式 layout_land.json，产物全部在 render/land/，竖屏产物不受影响）。
 'use strict';
 const fs = require('fs'); const path = require('path'); const { pathToFileURL } = require('url');
 const ROOT = process.env.KEPU_PROJECT ? path.resolve(process.env.KEPU_PROJECT) : fs.existsSync(path.join(process.cwd(), 'design')) ? process.cwd() : path.resolve(__dirname, '..');   // 专题目录：$KEPU_PROJECT → 当前目录

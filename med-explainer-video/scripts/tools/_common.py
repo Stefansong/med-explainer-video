@@ -1,5 +1,5 @@
 """工具共用（Python 侧）：项目根、画幅（ORIENT）、产物目录、storyboard 定位、layout 读取、TTS venv 解释器、whisper 回读提示词、日志。专题常量一律不写在这里。
-画幅：环境变量 ORIENT=port（默认，竖屏 1080×1920，产物在 render/）或 ORIENT=land（横屏 1920×1080 投稿版，版式 layout_land.json，产物全部在 render/land/，竖屏产物不受影响）。"""
+画幅：环境变量 ORIENT=port（默认，竖屏 1080×1920，产物在 render/）或 ORIENT=land（横屏 1920×1080，版式 layout_land.json，产物全部在 render/land/，竖屏产物不受影响）。"""
 import json, os, sys, datetime, locale
 from pathlib import Path
 # 工具被单独运行（不经 pipeline.py）且系统默认编码不是 UTF-8（中文 Windows 是 GBK）：用 UTF-8 模式重跑本脚本，免得读写中文 JSON 报错
@@ -29,7 +29,12 @@ def find_storyboard(root=ROOT):
     if len(all_) == 1: return all_[0]
     raise SystemExit(f'design/ 里有多个 storyboard：{[f.name for f in all_]}，请用 STORYBOARD=design/xxx.json 指定' if all_ else f'找不到 storyboard（design/storyboard*.json）：{root}')
 
-def load_sb(root=ROOT): return json.loads(find_storyboard(root).read_text())
+def load_sb(root=ROOT):
+    f = find_storyboard(root)
+    try: return json.loads(f.read_text())
+    except json.JSONDecodeError as e:   # JSON 写坏了：说清第几行（完整提示见 tools/validate.py）
+        ls = f.read_text().splitlines(); ctx = ls[e.lineno - 1].strip()[:120] if 0 < e.lineno <= len(ls) else ''
+        raise SystemExit(f'{f.name} 不是合法的 JSON：第 {e.lineno} 行第 {e.colno} 列附近（{e.msg}）。这一行：{ctx}。常见原因：少逗号 / 多逗号 / 中文引号 / 括号没配对')
 def save_sb(d, root=ROOT): find_storyboard(root).write_text(json.dumps(d, ensure_ascii=False, indent=1) + '\n')
 # storyboard 里只作记录、不进画面 / 声音 / 口径的字段：确认 HARD 点时会顺手写（status、拍板记录、人耳确认名单），不该触发复审，也不该让流水线重跑。
 # 其余字段一律算（scenes.js 能读 SB 的任何字段，宁可多复审）。audit.py 的哈希和 pipeline.py 各阶段的输入哈希共用这一份（10-26：aur_3d 交付后补人耳确认，tts 输入变了连锁重渲）

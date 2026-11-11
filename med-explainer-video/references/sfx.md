@@ -31,4 +31,4 @@
 
 新三种的试听（gain 0.5）：flush 4.4 s −26.9 LUFS / 峰 −6.8 dBFS、snore ×3 9.3 s −32.9 / −10.4（含停顿）、gasp 1.46 s −29.1 / −9.1；对照 splash −23.5 / −8.4、wind −23.6 / −6.3、hiss −17.3 / −6.6。Gemini 听后的客观描述在 `render/sfx_demo/gemini_描述.md`（只描述不打分）：三轮调整后，连播的四段顺序与音色全部被认出；单听仍说冲水少了翻滚气泡与管道共鸣、呼噜偏干涩、猛喘后两声偏轻——专题里可用 gain / params 再调，或在 sfx.py 继续改。
 
-加新音效：在 `tools/sfx.py` 写函数（返回 48 kHz float 数组，峰值归一到 0.3–0.8）、登记进 `SFX` 字典、本表加一行；`python "$SKILL/scripts/tools/sfx.py" demo` 出试听，`python3 tools/hear.py <wav> --like "…"` 让 Gemini 描述。旧专题混音不受影响（同一个 rng 种子与调用顺序；bph_on_template 横屏 mix.wav 逐位比对为证）。
+加新音效：在 `tools/sfx.py` 写函数（返回 48 kHz float 数组，峰值归一到 0.3–0.8）、登记进 `SFX` 字典、本表加一行；`python "$SKILL/scripts/tools/sfx.py" demo` 出试听。像不像由用户人耳判断（AI 助手听不到声音，只能看响度、峰值、语谱图）。加新音效不要改已有音效的随机数调用顺序，否则老片子的混音会变。

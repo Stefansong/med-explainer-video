@@ -43,8 +43,10 @@ const SH = {};
   SH.inRing = (c, x, y, r, col, fn, w = 12) => { SH.ring(c, x, y, r, col, w); c.save(); c.beginPath(); c.arc(x, y, r, 0, 7); c.clip(); fn(); c.restore(); };
 
   // ---------- 3D 立绘 / 图标 ----------
-  SH.IC = (c, A, id, x, y, size, o) => L.icon3d(c, A, id, x, y, size, o);
-  SH.SP = (c, A, id, x, yF, h, o) => L.sprite3d(c, A, id, x, yF, h, o);
+  // 尺寸写成了很小的数（把像素当成倍数）：画出来只有一个点，整场像是空的。报出来，别悄悄画一个看不见的东西
+  const tiny = (what, id, v, hint) => { if (typeof ENGINE !== 'undefined' && ENGINE.err && !(v >= 40)) ENGINE.err(`${what}('${id}') 的尺寸写成了 ${v}：这里要的是像素，不是倍数（${hint}）`); };
+  SH.IC = (c, A, id, x, y, size, o) => { tiny('SH.IC', id, size, '图标一般 300–420'); return L.icon3d(c, A, id, x, y, size, o); };
+  SH.SP = (c, A, id, x, yF, h, o) => { tiny('SH.SP', id, h, '人物立绘高度一般 600–760'); return L.sprite3d(c, A, id, x, yF, h, o); };
   SH.spW = (A, id, h) => { const im = A.img && A.img(id); return im ? h * im.width / im.height : h * 0.5; };   // 立绘按高 h 画时的宽
   SH.spX = (A, id, x, h) => Math.min(x, RX - 7 - SH.spW(A, id, h) / 2);   // 立绘中心 x 收进右安全线（再留 7 px：扫描实测 885 时屏幕右缘到 895）
   // 表情变化：两张立绘交叉淡化（k 0→1，调用方让它在 0.3 s 内走完）
@@ -53,17 +55,45 @@ const SH = {};
   // ---------- 满幅 3D 镜头：一张带场景的竖版图铺满整个画面（顶栏、字卡、字幕叠在上面）----------
   // id = storyboard.assets 里的图（建议 9:16、宽 ≥ 1080）。o: a 透明度；zoom 基础放大（默认 1.04，盖住画面呼吸）；push 整场缓慢推近的幅度（如 0.06）；ax / ay 裁切锚点 0–1（默认居中；人物偏上就把 ay 调小）。
   // 人物的脸放在画面中部（屏幕 y 约 350–1200），别让头顶钻到顶部章节名下面、下巴被字卡盖住。没图返回 null。
-  SH.full = (c, A, id, o = {}) => { const im = A.img && A.img(id); if (!im) return null; const St = OV.LAYOUT.stage, k = ENGINE.stageK(), land = St.x != null;
-    const x0 = land ? 0 : W / 2 - W / 2 / k, y0 = land ? St.design_top : St.design_bottom - St.bottom / k, w = land ? W : W / k, h = land ? St.design_bottom - St.design_top : H / k;
-    const z = (o.zoom || 1.04) * (1 + (o.push || 0) * L.clamp(A.t / Math.max(1, A.T))), s = Math.max(w / im.width, h / im.height) * z, a = o.a ?? 1;
-    c.save(); c.globalAlpha *= a; if (land) { c.beginPath(); c.rect(x0, y0, w, h); c.clip(); } c.imageSmoothingQuality = 'high';
-    c.drawImage(im, x0 + (w - im.width * s) * (o.ax ?? 0.5), y0 + (h - im.height * s) * (o.ay ?? 0.5), im.width * s, im.height * s); c.restore();
-    if (!land) L.NOFOOT = Math.max(L.NOFOOT || 0, a); return true; };
+  SH.full = (c, A, id, o = {}) => { const im = A.img && A.img(id); if (!im) return null; const St = OV.LAYOUT.stage, k = ENGINE.stageK(), land = St.x != null, a = o.a ?? 1;
+    const z = (o.zoom || 1.04) * (1 + (o.push || 0) * L.clamp(A.t / Math.max(1, A.T)));
+    const put = (x0, y0, w, h, zz) => { const s = Math.max(w / im.width, h / im.height) * zz; c.drawImage(im, x0 + (w - im.width * s) * (o.ax ?? 0.5), y0 + (h - im.height * s) * (o.ay ?? 0.5), im.width * s, im.height * s); };
+    c.save(); c.globalAlpha *= a; c.imageSmoothingQuality = 'high';
+    if (land) {   // 横屏：竖版图放在舞台那一列（画布全高），两侧用同一张图模糊压暗铺满，不留黑边
+      const y0 = St.design_top - St.y / k, hh = (OV.LAYOUT.height || 1080) / k, X0 = L.EXT ? L.EXT.x0 : 0, X1 = L.EXT ? L.EXT.x1 : W;
+      c.save(); c.filter = 'blur(26px) brightness(0.6)'; put(X0 - 60, y0 - 60, X1 - X0 + 120, hh + 120, 1.05); c.restore();
+      c.beginPath(); c.rect(0, y0, W, hh); c.clip(); put(0, y0, W, hh, z);
+    } else { put(W / 2 - W / 2 / k, St.design_bottom - St.bottom / k, W / k, H / k, z); L.NOFOOT = Math.max(L.NOFOOT || 0, a); }
+    c.restore(); return true; };
   // ---------- 警报：整屏红色闪动（危险信号场）。ta 起、tb 止（场内秒）----------
   SH.alarm = (c, t, ta, tb = 1e9, strength = 0.18) => { const a = L.vis(t, ta, tb, 0.3); if (a <= 0) return; c.save(); c.globalAlpha *= strength * a * (0.7 + 0.3 * Math.sin(t * 6)); c.fillStyle = P().red; SH.fillAll(c); c.restore(); };
   // ---------- 一排警示牌：times = 各牌落下的时刻（场内秒），自动排开；画面零文字，文字在字卡 ----------
   SH.flags = (c, t, times, y = 560, size = 170) => { const n = times.length, gap = Math.min(200, 760 / n), x0 = 540 - gap * (n - 1) / 2 - 20;
     times.forEach((ta, i) => SH.drop(c, t, ta, x0 + i * gap, y, () => { PR.card(c, 0, 0, size, size, '#FFFFFF', 30); SH.bang(c, 0, 0, size * 0.3); })); };
+
+  // ---------- 演示类：把“要点”画出来（步骤、指给你看、同一高度、放大看细节）----------
+  // 分步骤演示：一排步骤卡依次落下；正在讲的那一步放大、亮色条，讲完的打勾。卡片顶上的小圆点个数 = 第几步（不写数字）。
+  //   items: [{ at: 这一步开始讲的时刻, icon: 'ic_xxx'（storyboard.assets 里的图）或 (c, A) => { 用代码画，以 (0, 0) 为中心、约 ±70 } }]，最多 4 步；o: y 卡片中心高度（默认 620）、size 卡片边长
+  SH.steps = (c, A, items, o = {}) => { const t = A.t, n = items.length, auto = Math.min(250, Math.floor(800 / n) - 24), size = o.size == null ? auto : (o.size <= 4 ? Math.round(auto * o.size) : Math.max(90, o.size)), gap = size + 24, tot = gap * (n - 1) + size, cx = Math.min(540, RX - tot / 2), y = o.y ?? 620, p = P();
+    items.forEach((it, i) => { const nx = i + 1 < n ? items[i + 1].at : 1e9, on = L.fin(t, it.at, 0.3) - L.fin(t, nx, 0.3), done = L.pop(t, nx);
+      SH.drop(c, t, it.at, cx - tot / 2 + size / 2 + i * gap, y - 14 * on, () => { PR.card(c, 0, 0, size, size, '#FFFFFF', 30);
+        c.save(); L.rr(c, -size / 2, -size / 2, size, size, 30); c.clip(); c.fillStyle = L.mix(p.grey || '#B8B2BC', p.water_dark || '#3E9BC6', on); c.fillRect(-size / 2, -size / 2, size, 34); c.restore();
+        for (let d = 0; d <= i; d++) L.circle(c, -(i * 11) + d * 22, -size / 2 + 17, 6.5, '#FFFFFF');
+        c.save(); c.translate(0, 14); const sc = size / 250; c.scale(sc, sc); if (typeof it.icon === 'string') L.icon3d(c, A, it.icon, 0, 0, 165); else if (it.icon) it.icon(c, A); c.restore();
+        if (done > 0) L.with(c, () => { L.circle(c, 0, 0, 26, p.green); SH.tick(c, 0, 2, 15, '#FFFFFF'); }, { x: size / 2 - 22, y: size / 2 - 22, s: done }); }, 140, 0.94 + 0.1 * on); }); };
+  // 强调圈：从 t0 起在 (x, y) 画一个圈并一圈圈向外扩散——“看这里”（袖带绑在哪、哪里疼、按哪个键）
+  SH.spot = (c, x, y, r, t, t0 = 0, col) => { const a = L.fin(t, t0, 0.3); if (a <= 0) return; col = col || P().red; const q = ((t - t0) * 1.1) % 1;
+    L.ring(c, x, y, r, 8, L.alpha(col, 0.95 * a)); L.ring(c, x, y, r + r * 0.7 * q, 6, L.alpha(col, 0.7 * (1 - q) * a)); };
+  // 箭头：从 (x0, y0) 指向 (x1, y1)，k 0→1 逐渐画出来（k 用 L.seg(t, 起, 止)）
+  SH.arrow = (c, x0, y0, x1, y1, k = 1, col, w = 14) => { k = L.clamp(k); if (k <= 0.02) return; col = col || P().ink2; const ex = L.lerp(x0, x1, k), ey = L.lerp(y0, y1, k), ang = Math.atan2(y1 - y0, x1 - x0), h = w * 2.6;
+    L.line(c, [[x0, y0], [ex - Math.cos(ang) * h * 0.6, ey - Math.sin(ang) * h * 0.6]], w, col);
+    L.poly(c, [[ex, ey], [ex - Math.cos(ang - 0.45) * h, ey - Math.sin(ang - 0.45) * h], [ex - Math.cos(ang + 0.45) * h, ey - Math.sin(ang + 0.45) * h]], col); };
+  // 水平虚线：表示“在同一高度”（手臂和心脏同高、视线平齐），k 0→1 从左画到右，两端各一个圆点
+  SH.level = (c, x0, x1, y, k = 1, col, w = 8) => { k = L.clamp(k); if (k <= 0.02) return; col = col || P().water_dark; const ex = L.lerp(x0, x1, k);
+    c.save(); c.setLineDash([22, 16]); c.lineCap = 'round'; c.lineWidth = w; c.strokeStyle = col; c.beginPath(); c.moveTo(x0, y); c.lineTo(ex, y); c.stroke(); c.restore(); L.circle(c, x0, y, w * 1.3, col); if (k >= 0.98) L.circle(c, x1, y, w * 1.3, col); };
+  // 放大镜：把一张图（立绘 / 满幅图）的局部放大在圆窗里——手机上小细节看不清时用。(u, v) = 要放大的点在原图里的位置 0–1（左上为 0,0）；zoom 放大倍数（相对“图高 = 圆直径”）；pop 弹入进度
+  SH.zoomImg = (c, A, id, x, y, r, u, v, zoom = 3, o = {}) => { const im = A.img && A.img(id); if (!im) return null; const s = o.pop == null ? 1 : L.backOut(L.clamp(o.pop)); if (s <= 0.001) return null;
+    L.with(c, () => SH.inRing(c, 0, 0, r, o.col || P().ink2, () => { c.fillStyle = o.bg || '#FFF8EC'; c.fillRect(-r, -r, 2 * r, 2 * r); const k = 2 * r / im.height * zoom; c.drawImage(im, -u * im.width * k, -v * im.height * k, im.width * k, im.height * k); }), { x: Math.min(x, RX - r - 12), y, s }); return true; };
 
   // ---------- 日历（3D 图标 ic_calendar：6 列 × 5 行，四角按原图像素量，双线性插值到格心）----------
   SH.calCell = (A, x, y, size, i, j) => { const im = A.img && A.img('ic_calendar'); if (!im) return [x, y]; const u = (i + 0.5) / 6, v = (j + 0.5) / 5, k = size / Math.max(im.width, im.height), sx = im.width / 1173, sy = im.height / 1071;

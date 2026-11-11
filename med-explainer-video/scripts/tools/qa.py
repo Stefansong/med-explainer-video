@@ -119,7 +119,7 @@ if ovf.exists():
         elif n > th: fail(f'叠字层 {k}: {n} 张 > {th}')
     for k in ('label_shrunk', 'subtitle_shrunk'):
         if k in detail and isinstance(detail[k], dict): warn(f"叠字层 {k}：{detail[k]['summary']}")
-    if ov.get('page_errors'): fail(f"渲染页面报错 {ov['page_errors']} 次（看 render 日志 PAGEERR/CONSOLE）")
+    if ov.get('page_errors'): fail(f"画面代码报错 {ov['page_errors']} 次：" + '；'.join(ov.get('page_error_samples') or ['（看渲染输出里的 PAGEERR / CONSOLE 行）']))
     # AI 生成标识（GB 45438—2025）：实测字高 ≥ 要求字高（短边 5% + 余量）、首帧 = 0、持续 ≥ 2.0 s
     am = ov.get('ai_mark'); amc = (LAYOUT.get('ai_mark') or {})
     if amc.get('text'):
@@ -185,7 +185,7 @@ if LAND or TL.get('orient') == 'land':
         if size > mx * 1e6: fail(f"投稿文件 {size / 1e6:.1f} MB > {mx} MB")
         sd = ROOT / 'submit'; need = [f'{project}_字幕.srt', f'{project}_字幕文本.txt', f'{project}_横屏投稿版.mp4', f'{project}_封面_16x9.png']
         land['submit_files'] = {n: (sd / n).exists() for n in need}; miss = [n for n in need if not (sd / n).exists()]
-        if miss: fail(f'投稿包缺文件：{miss}（tools/submit_pack.py 生成）')
+        if miss: fail(f'投稿包缺文件：{miss}（本技能不出投稿包，这一项只对自己另做的 submit 版生效）')
     qa['land'] = land
 
 # ---------- ASR 回读 ----------

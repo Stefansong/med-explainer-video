@@ -2,7 +2,7 @@
 // ENGINE.create({ SB, TL, canvas, style, art, assetBase, strict }) → { renderAt(T, {overlay}), renderFrame(T, {sub, shutter, fps}), prepare(T, span) }
 // 视频素材（storyboard 里 scene.media；片头 / 片尾素材在 SB.intro_media / SB.outro_media）按帧图片加载：逐帧渲染前先 await prepare(T)，场景里用 A.media(id) 取当前帧。
 //   帧号：at=[cue, 偏移] 起播；dur 给定时只在窗口内有效（超出片长停在最后一帧）；loop='pingpong'|'loop'|[a,b]（帧号）或 loop_s=[a,b]（秒）；still=静帧；f0 / f0_s=从第几帧 / 几秒起播；tmap 分段对时。
-// 皮克斯 3D 人物层（media 条目带 pix，见 docs/pix3d.md）：pixActive / drawPix 按 pix.layout（full / circle / card / ellipse）叠到场景上，
+// 皮克斯 3D 人物层（media 条目带 pix，本技能不带口型视频的生成流程，接口保留）：pixActive / drawPix 按 pix.layout（full / circle / card / ellipse）叠到场景上，
 //   under=true 时经 L.bg → L.PIXBG 画在背景之上、前景之下；hide 让代码画的同一角色让位（L.HIDE，角色函数用 L.hide(who) 查：'skip' 不画 / 'faceless' 画无脸版）。
 //   只有片段帧到位时代码角色才让位：缺帧自动回退代码版。运动模糊子帧取视频帧一律按主帧时刻（MDT），否则 25 fps 的片段相邻两帧叠成重影。
 // 版式（舞台位置、片名、字卡、字幕）全部由 layout.json 决定（OV.LAYOUT，player.html 加载后 OV.setLayout）；本文件不写版式常量。
@@ -71,6 +71,7 @@ const ENGINE = {};
     const LANDM = () => OV.LAYOUT.stage && OV.LAYOUT.stage.x != null;
     const stageK = () => { const St = OV.LAYOUT.stage; if (LANDM()) return St.h / (St.design_bottom - St.design_top); const fit = (St.bottom - St.top) / (St.design_bottom - St.design_top); return St.scale == null || St.scale === 'fit' ? fit : +St.scale || 1; };
     ENGINE.stageK = stageK;
+    ENGINE.ERRS = {}; ENGINE.err = (msg) => { ENGINE.ERRS[msg] = (ENGINE.ERRS[msg] || 0) + 1; if (ENGINE.ERRS[msg] === 1) console.error(msg); };   // 同一条错误每帧都会触发：只打印一次，次数记在 ENGINE.ERRS（frames.js / render.js 取走）
     const stageMap = (ctx) => { const St = OV.LAYOUT.stage, k = stageK(); if (LANDM()) { ctx.translate(St.x, St.y); ctx.scale(k, k); ctx.translate(0, -St.design_top); return; } ctx.translate(W / 2, St.bottom); ctx.scale(k, k); ctx.translate(-W / 2, -St.design_bottom); };
     ENGINE.stageToScreen = (x, y) => { const St = OV.LAYOUT.stage, k = stageK(); if (LANDM()) return [St.x + x * k, St.y + (y - St.design_top) * k]; return [W / 2 + (x - W / 2) * k, St.bottom + (y - St.design_bottom) * k]; };   // 给 crop.js --at 跟踪用（不含呼吸漂移）
     const DWH = () => [((OV.LAYOUT.stage && OV.LAYOUT.stage.design_width) || 1080), (OV.LAYOUT.stage ? (OV.LAYOUT.stage.design_bottom || 1236) + 684 : 1920)];   // 场景设计画幅（竖屏 1080×1920）
@@ -158,12 +159,12 @@ const ENGINE = {};
         stageMap(ctx);
       }
       const [DW, DH] = DWH();
-      const fn = SC[sc.id] || (sc.id === 's99' ? SC.outro : null) || (sc.id === 's00' ? coverFn() : null) || (sc.id === 'sref' ? SC.refs_bg || ((cc, A) => L.bg(cc, DW, DH, L.P.paper, L.P.paper2, 53, A.t)) : null);
+      const fn = SC[sc.id] || (sc.id === 's99' ? SC.outro || ((cc, A) => L.bg(cc, DW, DH, L.P.paper, L.P.paper2, 47, A.t)) : null) || (sc.id === 's00' ? coverFn() : null) || (sc.id === 'sref' ? SC.refs_bg || ((cc, A) => L.bg(cc, DW, DH, L.P.paper, L.P.paper2, 53, A.t)) : null);
       const A_ = mkA(sc, t), PX = pixActive(sc, t), vis = visRect(mapped);
       L.HIDE = PX.hide; L.PIXBG = PX.under.length ? (cc) => { for (const q of PX.under) drawPix(cc, q, vis); } : null; L.NOFOOT = 0;
-      try { if (fn) fn(ctx, A_); else { L.bg(ctx, DW, DH, L.P.paper, L.P.paper2, 3, TT); console.error('scene not defined: ' + sc.id); ctx.fillStyle = 'magenta'; ctx.fillRect(0, 0, 80, 80); }
+      try { if (fn) fn(ctx, A_); else { L.bg(ctx, DW, DH, L.P.paper, L.P.paper2, 3, TT); ENGINE.err(`场景 ${sc.id} 没有画面代码：src/scenes.js 里要写 SC.${sc.id} = (c, A) => {…}`); ctx.fillStyle = 'magenta'; ctx.fillRect(0, 0, 80, 80); }
         for (const q of PX.over) drawPix(ctx, q, vis); }
-      catch (e) { console.error(sc.id, e.message, e.stack); ctx.fillStyle = 'magenta'; ctx.fillRect(0, 0, 80, 80); }
+      catch (e) { const m = /(scenes|anat|shots|props|lib)\.js:(\d+)/.exec(e.stack || ''); ENGINE.err(`场景 ${sc.id} 运行出错：${e.message}${m ? `（src/${m[1]}.js 第 ${m[2]} 行）` : ''}`); ctx.fillStyle = 'magenta'; ctx.fillRect(0, 0, 80, 80); }
       const full = Math.max(L.NOFOOT || 0, ...PX.over.concat(PX.under).filter((q) => q.m.pix.layout === 'full').map(pixA));   // 整幅皮克斯画面上不叠底部水波（像一层雾）
       L.HIDE = null; L.PIXBG = null; L.NOFOOT = 0;
       ctx.restore(); footer(ctx, TT, 1 - full); SK.on = false; if (HAND) SK.finish(ctx, W, H); else L.grain(ctx, W, H);
