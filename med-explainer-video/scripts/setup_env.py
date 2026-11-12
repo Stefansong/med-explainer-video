@@ -5,7 +5,7 @@
   Node 包       package.json（puppeteer-core，只控制浏览器、不下载浏览器；连不上 npmjs 自动改用 npmmirror）
   ffmpeg       系统里有且带 libx264 就用系统的；否则用 imageio-ffmpeg 自带的，复制到 scripts/bin/
   浏览器        找本机 Chrome / Edge（Windows 10/11 自带 Edge）；都没有就下载 chrome-headless-shell 到 scripts/bin/browsers/
-  字体          scripts/assets/fonts/ 里的开源字体（思源黑体子集、得意黑）
+  字体          scripts/assets/fonts/ 里的开源字体（思源黑体子集）
   --asr        预先下载语音识别模型（默认 large-v3-turbo，约 1.6 GB；不预下载的话第一次导入录音时自动下载）
   --align      另装 torch + torchaudio，逐字时刻改用 MMS_FA 强制对齐（更准，约多 1 GB 下载）
   --check      只检查，不安装
@@ -95,7 +95,7 @@ row('浏览器', bool(chrome), chrome or '没找到 Chrome / Edge：装 Chrome�
 
 # ---------- 字体 ----------
 fonts = sorted(p.name for p in (HERE / 'assets/fonts').glob('*') if p.suffix.lower() in ('.otf', '.ttf'))
-row('字体', len(fonts) >= 2, '、'.join(fonts) or '缺：scripts/assets/fonts/ 里应有 SourceHanSansSC-VF.otf 与 SmileySans-Oblique.ttf')
+row('字体', len(fonts) >= 1, '、'.join(fonts) or '缺：scripts/assets/fonts/ 里应有 HanSansSC-Subset-VF.otf')
 
 # ---------- 语音识别模型 ----------
 if not os.environ.get('HF_ENDPOINT') and not env.get('HF_ENDPOINT') and not reach('https://huggingface.co'):

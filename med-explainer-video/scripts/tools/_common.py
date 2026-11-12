@@ -171,7 +171,7 @@ def red_flag_check(SB, mode=None):
 
 def card_stays(labels, scene_len, maxN, big_takes_slot=True):
     """按叠字层 OV.labels 同一套格位规则算每张字卡的在屏时长。labels: [{t, text, big?, alert?}]（场内秒）；scene_len 场长；maxN 同屏格数（已含 max_on_screen 上限）。
-    规则（竖屏贴纸胶囊，big_takes_slot=True）：big 常驻第 0 格（后一张 big 替换前一张）；普通卡占其余 cap = maxN − (有 big ? 1 : 0) 格，满了再进一张就挤掉最老的；big 第一次出现时若普通卡占满 maxN 格也挤掉最老的一张。
+    规则（竖屏标签卡，big_takes_slot=True）：big 常驻第 0 格（后一张 big 替换前一张）；普通卡占其余 cap = maxN − (有 big ? 1 : 0) 格，满了再进一张就挤掉最老的；big 第一次出现时若普通卡占满 maxN 格也挤掉最老的一张。
     横屏要点板（big_takes_slot=False）：big 是板头、不占条目格，普通卡占满 maxN 格后再进一张挤掉最老的。
     返回 [{text, t, big, alert, stay, reason}]，reason ∈ squeezed（被后来的卡挤走）/ squeezed_by_big / replaced（big 被后一张 big 换掉）/ scene_end。"""
     labs = sorted(labels, key=lambda l: l['t']); bigs = [l for l in labs if l.get('big')]; out = []

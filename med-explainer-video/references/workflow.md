@@ -8,7 +8,7 @@
 |---|---|---|
 | 工具（所有专题共用） | `$SKILL/scripts/pipeline.py`、`tools/*.py *.js`、`src/` 原件 | 不改 |
 | 专题代码 | 专题 `src/scenes.js`（各场动画）、`src/anat.js`（解剖）、`src/cover.html`（可选封面）；`src/` 里其余文件是建专题时复制的引擎副本 | 你 |
-| 专题数据 | `design/storyboard_<project>.json`、`layout.json` | 你；HARD 点确认写进 `status` |
+| 专题数据 | `design/storyboard_<project>.json`、`layout.json`（版式和主题色，见 layout.md） | 你；HARD 点确认写进 `status` |
 | 定稿素材（永不覆盖） | `assets/lib/characters/`、`assets/lib/scenes/`、`assets/lib/props/`、`assets/fonts/` | 改动升版本 |
 | 录音 | `audio/recordings/`（用户放）→ `audio/lines/`（导入结果） | 用户 / 工具 |
 | 产物 | `render/`（timeline.json、mix.wav、check/、预演、成片、qa.json、审核材料、pipeline.log、stage_status.json） | 工具 |
@@ -52,7 +52,7 @@ storyboard 主要字段（模板里每段都有 `_comment`）：
 ## timeline / mix
 
 - `timeline`：场景与台词的绝对时间、字幕分块（≤ 11 字一块，按标点和词边界切）、字幕块起点吸附波形开口点、字卡时刻、cue、`card_stays`。没录音时 `--estimate` 按字数估。
-- `mix`：程序化配乐（轻快大调，可指定小调段、安静段）+ 字卡“啵”声 + 转场水浪 + storyboard 声明的音效；人声闪避；整体 −16 LUFS。产物 `render/mix.wav` 和分轨 `stem_*.wav`。
+- `mix`：程序化配乐（电钢琴分解和弦，可指定小调段、安静段）+ 字卡出现的轻点声 + 转场气流声 + storyboard 声明的音效；人声闪避；整体 −16 LUFS。产物 `render/mix.wav` 和分轨 `stem_*.wav`。
 
 ## 动画与抽帧
 

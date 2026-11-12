@@ -44,3 +44,12 @@ jobs:
             ${{ runner.temp }}/smoke/demo/render/bg_job.log
             ${{ runner.temp }}/smoke/demo/design/*.docx
           if-no-files-found: warn
+  py39-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Scripts must compile on Python 3.9
+        run: python -m compileall -q med-explainer-video/scripts/pipeline.py med-explainer-video/scripts/setup_env.py med-explainer-video/scripts/tools tests

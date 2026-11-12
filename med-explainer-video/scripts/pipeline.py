@@ -4,6 +4,7 @@
   python pipeline.py setup [--check]                                        检查 / 安装运行环境（Python 包、Node 包、ffmpeg、浏览器、字体）
   python pipeline.py new <project> [--title "片名"] [--dir 工作目录]          新专题：在工作目录（默认当前目录）下建 <project>/
   python pipeline.py new <project> --example                                 建一份样例专题（45 秒，素材和代码齐全）；接着 timeline --estimate → animatic 就能看到预演
+  python pipeline.py new <project> … --theme mint|indigo|amber              建专题时选配色（默认 mint 薄荷）；之后想换：python pipeline.py theme <project> <主题名>
   python pipeline.py run <project> [--until s6a|render|qa|deliver] [--force]  从头跑到 --until（默认 qa）；碰到未确认的 HARD 点停下（退出码 3）、缺录音停下（退出码 6）
   python pipeline.py <stage> <project> [--force] [阶段参数]                    单跑一个阶段：s0 s3 voice timeline mix frames animatic audit_pre render qa audit_post deliver
   python pipeline.py check <project>                                        只检查不渲染（1–2 秒）：分镜和场景代码哪里写错了、怎么改。改完任何东西先跑它
@@ -431,9 +432,31 @@ def argval(args, name):
     v = next((a.split('=', 1)[1] for a in args if a.startswith(name + '=')), None)
     if name in args and args.index(name) + 1 < len(args): v = args[args.index(name) + 1]
     return v
+def load_themes():
+    d = json.loads((HERE / 'themes.json').read_text()); return {k: v for k, v in d.items() if not k.startswith('_')}
+def apply_theme(root, name):
+    """把主题预设写进专题：layout.json / layout_land.json 的 theme（叠字层颜色）+ storyboard.style.palette 里的底色（纸面、家、诊室、地面、墨色）"""
+    T = load_themes()
+    if name not in T: die('没有主题 ' + name + '；可选：' + '、'.join(k + '（' + v['label'] + '）' for k, v in T.items()))
+    root = Path(root)
+    for n in ('layout.json', 'layout_land.json'):
+        f = root / n
+        if f.exists(): d = json.loads(f.read_text()); d['theme'] = dict(T[name]['theme']); f.write_text(json.dumps(d, ensure_ascii=False, indent=1) + '\n')
+    for f in sorted((root / 'design').glob('storyboard*.json')):
+        d = json.loads(f.read_text()); st = d.setdefault('style', {}); st['theme'] = name; st.setdefault('palette', {}).update(T[name]['palette']); f.write_text(json.dumps(d, ensure_ascii=False, indent=1) + '\n')
+    return T[name]['label']
+def cmd_theme(args):
+    pos = [a for a in args if not a.startswith('--')]; T = load_themes()
+    if len(pos) < 2:
+        print('pipeline.py theme <专题> <主题名>   换一套配色（叠字层颜色 + 画面底色）。可选主题：'); [print('  ' + k.ljust(8) + ' ' + v['label']) for k, v in T.items()]; return 4 if pos else 0
+    root = Path(pos[0]).resolve()
+    if not (root / 'design').is_dir(): die(f'{root} 不是专题目录')
+    print(f'✓ 主题已换成 {pos[1]}（{apply_theme(root, pos[1])}）。已经出过的预演 / 成片要重跑才会变。'); return 0
 def cmd_new(args):
-    pos = [a for i, a in enumerate(args) if not a.startswith('--') and (i == 0 or args[i - 1] not in ('--title', '--dir'))]
-    if not pos: die('pipeline.py new <project> [--title "片名"] [--dir 工作目录] [--example]')
+    pos = [a for i, a in enumerate(args) if not a.startswith('--') and (i == 0 or args[i - 1] not in ('--title', '--dir', '--theme'))]
+    if not pos: die('pipeline.py new <project> [--title "片名"] [--dir 工作目录] [--example] [--theme mint|indigo|amber]')
+    theme = argval(args, '--theme')
+    if theme and theme not in load_themes(): die(f"没有主题 {theme}；可选：{'、'.join(load_themes())}")
     name, title = pos[0], argval(args, '--title'); base = Path(argval(args, '--dir') or Path.cwd()).resolve()
     dst = Path(name) if Path(name).is_absolute() else base / name
     if not re.match(r'^[a-z][a-z0-9_]*$', dst.name): die('专题目录名用小写字母、数字、下划线（成片名 render/{project}_final.mp4 要用它）')
@@ -455,6 +478,7 @@ def cmd_new(args):
         (dst / 'design' / f'storyboard_{dst.name}.json').write_text(json.dumps(sb, ensure_ascii=False, indent=1) + '\n')
         for f in ('scenes.js', 'anat.js'): shutil.copy(EX / 'src' / f, dst / 'src' / f)
         shutil.copytree(EX / 'assets/lib', dst / 'assets/lib', dirs_exist_ok=True)
+    if theme: apply_theme(dst, theme)
     me = Path(__file__).resolve()
     (dst / 'README.md').write_text(f"# {dst.name}\n\n由 med-explainer-video 生成（{now()[:10]}）。\n\n"
                                    f"下一步：改 `design/storyboard_{dst.name}.json`（title / characters / claims / red_flags / chapters / scenes / voices），然后\n\n"
@@ -546,6 +570,7 @@ def main(argv):
     cmd, rest = argv[0], argv[1:]
     if cmd == 'setup': return subprocess.call([sys.executable, '-X', 'utf8', str(HERE / 'setup_env.py'), *rest])
     if cmd == 'new': cmd_new(rest); return 0
+    if cmd == 'theme': return cmd_theme(rest)
     orient = argval(rest, '--orient')
     if '--orient' in rest: i = rest.index('--orient'); rest = rest[:i] + rest[i + 2:]
     rest = [a for a in rest if not a.startswith('--orient=')]
@@ -575,6 +600,6 @@ def main(argv):
         if r in CODE: return CODE[r]
         if r != 'dry' and cmd in HARD_AFTER and not P.confirmed(HARD_AFTER[cmd]): return P.hard_stop(HARD_AFTER[cmd])
         return 0
-    die(f'未知子命令 {cmd}；可用：setup new check run wait status clean export_subs {" ".join(STAGES)}（--orient land 横屏；长命令加 --bg 放后台）')
+    die(f'未知子命令 {cmd}；可用：setup new theme check run wait status clean export_subs {" ".join(STAGES)}（--orient land 横屏；长命令加 --bg 放后台）')
 
 if __name__ == '__main__': sys.exit(bg_child(sys.argv[1:]) if '--bg-child' in sys.argv else main(sys.argv[1:]))

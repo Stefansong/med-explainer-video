@@ -25,6 +25,13 @@ print('工作目录', WORK, '| 平台', sys.platform, '| Python', sys.version.sp
 pipe('setup', 'setup')
 pipe('new --example', 'new', 'demo', '--example', '--dir', WORK)
 pipe('check（样例没有错误）', 'check', P)
+pipe('new --theme indigo', 'new', 'th1', '--example', '--theme', 'indigo', '--dir', WORK)
+th = json.loads((WORK / 'th1/layout.json').read_text(encoding='utf-8'))['theme']['name']; pal = json.loads((WORK / 'th1/design/storyboard_th1.json').read_text(encoding='utf-8'))['style']
+ok = th == 'indigo' and pal['theme'] == 'indigo' and pal['palette']['paper'] == '#F5F6FC'; steps.append(('建专题时选的主题写进了版式和调色板', ok, 0, 0)); print('PASS 主题 indigo 已写入' if ok else f'FAIL 主题没写对：{th} {pal.get("theme")}', flush=True)
+if not ok: summary(); sys.exit(1)
+pipe('theme（换成 amber）', 'theme', WORK / 'th1', 'amber')
+pipe('theme（不存在的主题要报错）', 'theme', WORK / 'th1', 'nope', expect=4)
+pipe('check（换主题后仍通过）', 'check', WORK / 'th1')
 pipe('s0（停在 HARD 点）', 's0', P, expect=3)
 docx = list((P / 'design').glob('*修订稿*.docx')); steps.append(('修订稿出了 docx', bool(docx), 0, 0)); print('PASS 修订稿 docx' if docx else 'FAIL 修订稿没有 docx', flush=True)
 if not docx: summary(); sys.exit(1)

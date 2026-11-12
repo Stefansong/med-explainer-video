@@ -62,9 +62,9 @@ const ENGINE = {};
         return { shape: v[0], open }; } return null; } });
     const mk = () => { const k = document.createElement('canvas'); k.width = W; k.height = H; return k; };
     const off = [mk(), mk()], acc = mk(), ac = acc.getContext('2d');
-    const footer = (ctx, T, a = 1) => { const F = OV.LAYOUT.footer; if (!F || F.enabled === false || a <= 0.01) return; const [y1, y2] = F.waves || [1700, 1760]; ctx.save(); ctx.globalAlpha *= a;
-      ctx.beginPath(); ctx.moveTo(0, H); for (let x = 0; x <= W; x += 20) ctx.lineTo(x, y1 + 14 * Math.sin(x / 90 + T * 1.6)); ctx.lineTo(W, H); ctx.closePath(); ctx.fillStyle = 'rgba(124,200,232,0.16)'; ctx.fill();
-      ctx.beginPath(); ctx.moveTo(0, H); for (let x = 0; x <= W; x += 20) ctx.lineTo(x, y2 + 12 * Math.sin(x / 70 - T * 1.3)); ctx.lineTo(W, H); ctx.closePath(); ctx.fillStyle = 'rgba(124,200,232,0.14)'; ctx.fill(); ctx.restore(); };
+    // 页脚：画面最底下一段向主题底色淡出（平台的文案、按钮压在这里；layout.footer.from 起，enabled false 关掉）
+    const footer = (ctx, T, a = 1) => { const F = OV.LAYOUT.footer; if (!F || F.enabled === false || a <= 0.01) return; const y1 = F.from ?? Math.round(H * 0.855), pc = OV.theme().paper; ctx.save(); ctx.globalAlpha *= a;
+      const g = ctx.createLinearGradient(0, y1, 0, H); g.addColorStop(0, `rgba(${pc},0)`); g.addColorStop(1, `rgba(${pc},${F.alpha ?? 0.6})`); ctx.fillStyle = g; ctx.fillRect(0, y1, W, H - y1); ctx.restore(); };
     // 舞台映射：场景按 layout.stage.design_top–design_bottom 设计。
     //   竖屏：以舞台底边为锚放置；stage.scale = 1.0（默认，原尺寸、顶上多出的部分只铺背景）或 "fit"（整体缩放到 top–bottom）或任意倍数
     //   横屏（stage.x/y/h）：整块舞台缩放 k = h / 设计高 映射到 (x, y) 起的矩形（bph 横屏交付版：60,104,880 → k 0.88）
@@ -165,7 +165,7 @@ const ENGINE = {};
       try { if (fn) fn(ctx, A_); else { L.bg(ctx, DW, DH, L.P.paper, L.P.paper2, 3, TT); ENGINE.err(`场景 ${sc.id} 没有画面代码：src/scenes.js 里要写 SC.${sc.id} = (c, A) => {…}`); ctx.fillStyle = 'magenta'; ctx.fillRect(0, 0, 80, 80); }
         for (const q of PX.over) drawPix(ctx, q, vis); }
       catch (e) { const m = /(scenes|anat|shots|props|lib)\.js:(\d+)/.exec(e.stack || ''); ENGINE.err(`场景 ${sc.id} 运行出错：${e.message}${m ? `（src/${m[1]}.js 第 ${m[2]} 行）` : ''}`); ctx.fillStyle = 'magenta'; ctx.fillRect(0, 0, 80, 80); }
-      const full = Math.max(L.NOFOOT || 0, ...PX.over.concat(PX.under).filter((q) => q.m.pix.layout === 'full').map(pixA));   // 整幅皮克斯画面上不叠底部水波（像一层雾）
+      const full = Math.max(L.NOFOOT || 0, ...PX.over.concat(PX.under).filter((q) => q.m.pix.layout === 'full').map(pixA));   // 满幅画面上不叠页脚淡出
       L.HIDE = null; L.PIXBG = null; L.NOFOOT = 0;
       ctx.restore(); footer(ctx, TT, 1 - full); SK.on = false; if (HAND) SK.finish(ctx, W, H); else L.grain(ctx, W, H);
     };
@@ -177,7 +177,7 @@ const ENGINE = {};
       if (sc.id === 's99') OV.outro(ctx, SB, t); else { OV.labels(ctx, sc, t, T); OV.subtitle(ctx, sc, t, T); }
       SK.on = false;
     };
-    const TD = 0.8; // 转场：一道水浪从底部涨上来
+    const TD = 0.7; // 转场：一道斜向色带从左向右扫过，带子后面露出下一场
     const sceneAt = (T) => { const i = TL.scenes.findIndex((s) => T >= s.start && T < s.end); return i < 0 ? TL.scenes.length - 1 : i; };
     const renderAt = (T, opt = {}) => {
       T = Math.max(0, Math.min(TL.duration - 1e-3, T)); const ov = opt.overlay !== false;
@@ -189,10 +189,9 @@ const ENGINE = {};
       const B = a.end, p = L.easeInOut(L.clamp((T - (B - TD / 2)) / TD));
       drawScene(off[0].getContext('2d'), a, T - a.start); drawScene(off[1].getContext('2d'), b, Math.max(0, T - b.start));
       c.drawImage(off[0], 0, 0);
-      const Y = H + 200 - p * (H + 400); const wave = (x, k) => Y + 40 * Math.sin(x / 110 + p * 9 + k) + 20 * Math.sin(x / 47 - p * 13);
-      c.save(); c.beginPath(); c.moveTo(-10, H + 10); for (let x = -10; x <= W + 10; x += 15) c.lineTo(x, wave(x, 0)); c.lineTo(W + 10, H + 10); c.closePath(); c.clip(); c.drawImage(off[1], 0, 0); c.restore();
-      for (const [dy, col, lw] of [[0, L.P.water_dark, 46], [-26, L.P.water, 18]]) { c.beginPath(); for (let x = -10; x <= W + 10; x += 15) c.lineTo(x, wave(x, 0) + dy); c.lineWidth = lw; c.strokeStyle = col; c.stroke(); }
-      const R = L.rand(7); for (let k = 0; k < 18; k++) { const x = R() * W; L.circle(c, x, wave(x, 0) - 40 - R() * 80, (8 + R() * 14) * (0.6 + 0.4 * Math.sin(p * 20 + k)), 'rgba(255,255,255,0.85)'); }
+      const th = OV.theme(), sk = Math.tan(0.44) * H, X = -sk - 170 + p * (W + sk + 340);   // 斜边（与背景光带同一个角度）：X 是它在画面底边的位置，上端比下端靠右 sk
+      c.save(); c.beginPath(); c.moveTo(-10, -10); c.lineTo(X + sk, -10); c.lineTo(X, H + 10); c.lineTo(-10, H + 10); c.closePath(); c.clip(); c.drawImage(off[1], 0, 0); c.restore();
+      for (const [dx, col, lw] of [[0, th.accent, 56], [50, th.accent_soft, 22]]) { c.beginPath(); c.moveTo(X + sk + dx, -10); c.lineTo(X + dx, H + 10); c.lineWidth = lw; c.strokeStyle = col; c.stroke(); }
       if (ov) overlays(c, T < B ? a : b, T);
     };
     // 运动模糊：快门时间内画 n 个子帧（只画场景），按 1/(i+1) 透明度逐个叠加 = 求平均；字幕字卡只在中心时刻画一次，保持清晰；视频片段按主帧时刻取帧（MDT）

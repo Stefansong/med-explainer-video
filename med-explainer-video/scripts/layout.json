@@ -1,8 +1,25 @@
 {
- "_comment": "版式 v2。叠字层 overlay.js 与引擎 engine.js 只读这个文件，改版式只改这里、不改代码。单位：画布像素，竖屏 1080×1920。",
+ "_comment": "版式 v3（技能默认模板）。叠字层 overlay.js 与引擎 engine.js 只读这个文件，改版式只改这里、不改代码。单位：画布像素，竖屏 1080×1920。颜色都在 theme。",
  "version": "v2",
  "width": 1080,
  "height": 1920,
+ "theme": {
+  "name": "mint",
+  "accent": "#0FA573",
+  "accent_dark": "#0B7F5A",
+  "accent_soft": "#DDF3EA",
+  "ink": "#1F2A44",
+  "ink2": "#5B6785",
+  "alert": "#E5484D",
+  "alert_dark": "#B4232A",
+  "alert_soft": "#FDECEC",
+  "card": "#FFFFFF",
+  "sub_text": "#FFFFFF",
+  "paper": "244,248,246",
+  "sub_bg": "rgba(24,34,58,0.88)",
+  "shadow": "31,42,68"
+ },
+ "_theme": "主题色（叠字层所有颜色）：accent 主色 / accent_dark / accent_soft；ink 正文 / ink2 次要文字；alert 危险信号红 / alert_dark / alert_soft；card 字卡底；paper 顶部遮罩、页脚淡出、文献页底色（写 \"r,g,b\"）；sub_bg 字幕条底 / sub_text 字幕字色；shadow 投影色（\"r,g,b\"）。预设见 scripts/themes.json（pipeline.py theme <专题> <名字>）。",
  "safe_area_verified": false,
  "_safe_area_note": "safe.right_x / safe.y_from / safe.y_to / top_reserved / bottom_reserved 这些安全区数值是按平台 UI 示意图估的，尚未用真机截图核对。用户在抖音/视频号真机上截一张播放页，量出顶栏、右侧图标列、底部文案区的像素位置后更新这里，并把 safe_area_verified 改成 true。在此之前 qa.py 只把越界计数当警告（见 qa_gate）。",
  "top_reserved": [
@@ -11,33 +28,34 @@
  ],
  "_top_reserved": "0–120 留给平台顶栏，不放任何内容（header 的渐变底从 0 开始只是背景）。",
  "header": {
+  "_comment": "120–230：进度轨（一条细线，每章起点一个节点）+ 左对齐的“序号块 + 章节名”。片名不常驻顶部。",
   "band": [
    120,
    230
   ],
   "bar_y": 140,
-  "bar_height": 14,
-  "bar_margin_x": 90,
-  "bar_gap": 12,
-  "chapter_y": 192,
-  "chapter_size": 56,
-  "chapter_chip": true,
-  "chapter_chip_height": 72,
-  "_comment": "120–230：分段进度条 + 当前章节名（56 px）。章节名放大是因为老年观众；片名不再常驻顶部。"
+  "bar_height": 8,
+  "bar_margin_x": 60,
+  "node": 11,
+  "chapter_x": 60,
+  "chapter_y": 196,
+  "chapter_size": 50
  },
  "title": {
-  "size": 72,
+  "size": 66,
   "y": 300,
   "until_seconds": 5,
   "fade_in": 0.5,
   "fade_out": 0.6,
   "max_width": 980,
-  "_comment": "片名 72 px 只在正片开场出现在舞台内（y=300），然后上滑退场。入场时刻 = max(封面结束 + 0.15 s, AI 标识退场时刻)（10-21：标识改大后与片名位置重叠，片名等它退场再入），至少显示 min_seconds 秒、最晚到封面后 until_seconds 秒。keepout_design_y：s01 前 until_seconds 秒，设计坐标 236–420 这一带不放主体（片名会盖住）。封面（s00）另有自己的片名。",
+  "_comment": "片名：主题色横幅 + 白字，只在正片开场出现在舞台内（y=300），然后上滑退场。入场时刻 = max(封面结束 + 0.15 s, AI 标识退场时刻)，至少显示 min_seconds 秒、最晚到封面后 until_seconds 秒。keepout_design_y：s01 前 until_seconds 秒，设计坐标 236–420 这一带不放主体（片名会盖住）。封面（s00）另有自己的片名。",
   "keepout_design_y": [
    236,
    420
   ],
-  "min_seconds": 3.0
+  "min_seconds": 3.0,
+  "pad_x": 44,
+  "radius": 20
  },
  "stage": {
   "top": 230,
@@ -48,7 +66,7 @@
   "scale": 1.0
  },
  "labels": {
-  "style": "pill",
+  "style": "tag",
   "band": [
    1300,
    1452
@@ -61,19 +79,19 @@
   "gap": 14,
   "big_size": 50,
   "big_pad": 40,
-  "pad_l": 30,
-  "dot": 16,
-  "dot_gap": 18,
-  "pad_r": 34,
-  "radius": "half",
+  "pad_l": 22,
+  "dot": 34,
+  "dot_gap": 14,
+  "pad_r": 30,
+  "radius": 16,
   "shadow": {
-   "alpha": 0.08,
+   "alpha": 0.1,
    "dy": 5,
    "blur": 10
   },
-  "alert_ring": 3,
+  "alert_ring": 0,
   "secondary_weight": 500,
-  "dot_dim_alpha": 0.6,
+  "dot_dim_alpha": 0.55,
   "pop": {
    "seconds": 0.4,
    "text_fade": 0.25,
@@ -83,43 +101,41 @@
    "size": 40,
    "row_height": 54,
    "gap": 12,
-   "dot": 14,
+   "dot": 28,
    "big_size": 46
   },
   "newest_highlight_seconds": 2.2,
-  "_comment": "字卡样式 A「贴纸胶囊」+ 防拥挤方案二（用户 10-19 批准，对比 docs/layout_crowding_2026-10-19/）。字卡区 1300–1452；普通卡 70 高 / 间距 14 / 48 px / 色点 16，big 50；compact 54 / 12 / 40 px / 色点 14，big 46；投影 alpha 0.08、下偏 5、模糊 10。同屏上限 max_on_screen=3：场景 max_labels 超过它按 3 算（max_labels>2 仍自动 compact）：3 张 compact = 3×54+2×12 = 186 px，顶到 1266（盖舞台底 34 px）；卡底 1452 到字幕可见顶约 1507，实测间距 54–55 px，扣投影约 45 px（改前 26–40 px，扣投影 0–11 px）。停留下限 min_stay 2.5 s（alert 卡 min_stay_alert 3.5 s）：timeline.py 按叠字层同一套格位规则算每张卡在屏时长（card_stays），场景结束导致不足的自动延长该场结尾（每场最多 2.0 s，无旁白、配乐继续），被后来的卡挤走导致不足的只警告（调 cue / 提高该场上限到 3 / 合并卡）；qa.py：alert 不足判失败、普通不足判警告。卡宽自适应：w = 文字宽 + pad_l + dot + dot_gap + pad_r，上限 width=840，超过上限才缩字号（记 label_shrunk）；右缘自然不越过 safe.right_x。形状：圆角 = 高/2（radius half）、白底软投影（Canvas shadowBlur = 2×blur）；色点圆心在左内边距 pad_l 处，最新一张饱和、其余 dot_dim_alpha；alert 卡色点红、文字 red_dark、卡外圈 alert_ring px 红描边。big 大标题卡：红底胶囊、得意黑 big_size 白字、左右内边距 big_pad、宽自适应、常驻第 0 格。两档字重：文字在第一个“（”或“：”处拆主词（700 墨色）和说明（secondary_weight，ink2）；big 不拆。弹入：pop.seconds backOut，胶囊从色点展开到全宽，文字在后 text_fade 秒淡入；淘汰：整卡淡出并上移 leave_rise px。位置规则：普通从 band 顶向下，compact 以 band 底为锚向上。深色场景：卡底 rgba(22,26,64,0.92)、文字白、说明段浅灰。",
+  "_comment": "字卡「标签卡」：左对齐（从 x 起向右长，最宽 width），小圆角 radius，左侧一道主题色条 bar；危险信号（alert）= 整张红底白字 + 白圆红叹号（直径 dot）；big = 深色底大标题卡。字卡区 1300–1452；普通卡 70 高 / 间距 14 / 48 px，big 50；同屏超过 max_default 张自动用 compact（54 高 / 40 px）。同屏上限 max_on_screen=3。进场：从左滑入并淡入；超出上限时最老的一张淡出上移。想居中就加 \"align\": \"center\"、\"center_x\": 540。",
   "max_on_screen": 3,
   "min_stay": 2.5,
   "min_stay_alert": 3.5,
-  "align": "center",
-  "center_x": 540,
-  "_align": "center（10-23 用户：整个画面偏左）：每张卡按自身宽度居中在 center_x，右缘超过 safe.right_x 才往左让；x 仍是最左边界，width 是最大宽度。left = 旧做法（从 x 起向右长）"
+  "bar": 12
  },
  "subtitle": {
   "y": 1552,
-  "size": 74,
+  "size": 68,
   "center_x": 540,
   "max_width": 840,
   "max_chars": 11,
-  "name_size": 36,
-  "stroke": 0.24,
+  "name_size": 34,
   "lead": 0.06,
   "tail": 0.3,
-  "_comment": "字幕中心 y=1552（用户 10-18：1520 太靠上、离字卡太近 → 改回第一集成片的位置：字顶约 1515，距字卡区底边 1480 留 35 px，字底约 1589 仍在 bottom_reserved 1600 之上）；74 px；文字宽度不超过 max_width，超过就缩字号（记 subtitle_shrunk）。横向：中心 480、宽 ≤ 840（右缘 ≤ 900），与 brief 的 540/880 不同，等用户手机截图核安全区后再定。max_chars 给 timeline.py 分块用：floor(840/74)=11。",
-  "_center_x": "10-23 改 480→540 居中；右缘超过 safe.right_x 才往左让",
+  "_comment": "字幕条：深色半透明圆角条（theme.sub_bg）+ 白字，中心 y=1552；字号 68，条高 = 字号 × bar_height，左右留白 bar_pad，圆角 bar_radius。居中在 center_x，右缘超过 safe.right_x 才往左让；文字宽度不超过 max_width − 2×bar_pad，超过就缩字号（记 subtitle_shrunk）。角色台词的名牌是搭在字幕条左上角的小标签（name_size）。max_chars 给 timeline.py 分块用。",
   "yield_next": true,
-  "_yield_next": "10-24：句末块的停留按“下一句首块出现”截住（规则同句内换块：间隔 ≤0.6 s 接着亮到下一块，>0.6 s 在末字后 tail 秒隐去）。不写 = 旧画法：上一句的 tail 0.3 s 会压住下一句首块，同一人连说两句（句间 gap_same 0.12 s）时后句首块晚出 32–124 ms（nocturia 10 处、foam 旁白连句 53–125 ms）。"
+  "_yield_next": "10-24：句末块的停留按“下一句首块出现”截住（规则同句内换块：间隔 ≤0.6 s 接着亮到下一块，>0.6 s 在末字后 tail 秒隐去）。不写 = 旧画法：上一句的 tail 0.3 s 会压住下一句首块，同一人连说两句（句间 gap_same 0.12 s）时后句首块晚出 32–124 ms（nocturia 10 处、foam 旁白连句 53–125 ms）。",
+  "bar_pad": 32,
+  "bar_height": 1.52,
+  "bar_radius": 22
  },
  "bottom_reserved": [
   1600,
   1920
  ],
- "_bottom_reserved": "1600–1920 留白：账号名/文案区/底部 tab。footer 水浪只是背景装饰，不是内容。",
+ "_bottom_reserved": "1600–1920 留白：账号名/文案区/底部 tab。footer 只是把画面最底下一段向主题底色淡出，不是内容。",
  "footer": {
-  "waves": [
-   1700,
-   1760
-  ],
+  "style": "fade",
+  "from": 1640,
+  "alpha": 0.6,
   "enabled": true
  },
  "safe": {
@@ -149,10 +165,6 @@
    "HeiTiSub": {
     "src": "assets/fonts/HanSansSC-Subset-VF.otf",
     "weight": "250 900"
-   },
-   "DeYiHei": {
-    "src": "assets/fonts/SmileySans-Oblique.ttf",
-    "weight": "400"
    }
   },
   "sub": {
@@ -164,14 +176,14 @@
    "weight": 700
   },
   "title": {
-   "family": "\"DeYiHei\",\"HeiTiSub\"",
-   "weight": 400
+   "family": "\"HeiTiSub\"",
+   "weight": 900
   },
   "ref": {
    "family": "\"HeiTiSub\"",
    "weight": 400
   },
-  "_comment": "老年观众看得清：粗黑体、大字号。字幕 思源黑体 Heavy，字卡 Bold，片名/大字卡 得意黑，文献/署名 思源黑体 Regular。files 里的字体由 player.html 用 FontFace 注册，路径相对项目根。10-21 用户：去掉苹方后备（横屏竖屏一样只用开源字体）；浏览器对缺字仍会回退系统字体，真正的防线是 tools/check_fonts.py 逐字核 cmap，缺字在 QA 门报出（qa_gate.font_fallback）。"
+  "_comment": "老年观众看得清：粗黑体、大字号。全片只用思源黑体子集（可变字重）：字幕 Heavy 900，字卡 Bold 700，片名 / 章节名 / 大字卡 Heavy 900，文献 / 署名 Regular 400。files 里的字体由 player.html 用 FontFace 注册，路径相对项目根。想换字体：把字体文件放进专题 assets/fonts/，在 files 里登记，再改各角色的 family（只用可商用的开源字体）；浏览器对缺字会回退系统字体，防线是 tools/check_fonts.py 逐字核 cmap，缺字在 QA 门报出（qa_gate.font_fallback）。"
  },
  "qa_gate": {
   "label_over_subtitle": 0,
@@ -194,7 +206,7 @@
   "fade_out": 0.5,
   "x": 48,
   "y": 252,
-  "_comment": "GB 45438—2025《网络安全技术 人工智能生成合成内容标识方法》：视频起始画面加显式标识，文字高度 ≥ 画面最短边 5%（竖屏 1080 → 54 px），从起始画面起持续 ≥ 2 s。实现（OV.aiMark，移植自 bph）：按实测字形高度（actualBoundingBoxAscent + Descent）迭代放大字号，直到 ≥ ceil(短边×min_ratio)+margin_px；从第 from 秒（0 = 第 0 帧，盖在封面上）起第 0 帧就满不透明、不做淡入，show_seconds 秒后用 fade_out 秒淡出（3.0 s ≥ 2 s 留余量）。text 含“AI”与“生成”两要素；投稿平台要求“人工智能生成合成”时只改这里。位置：竖屏左上 x 48、顶 y 252，避开平台 UI —— 第三方实测抖音竖屏播放页顶栏约到 y 240、右侧图标列从 y 840 起、底部 660 px 是文案区（未经本机真机核对，safe_area_verified 仍为 false）。片名（title）在标识退场前不入场（见 title._comment）。片尾 outro.ai_note 不变。渲染期 OV.lastAiMark 记录字号 / 实测字高 / 要求字高，render.js 汇总进 overlay.json 的 ai_mark，qa.py 判定。keepout：封面与 s01 前 3 s 的画面在 x 48–430、y 252–340 这一块不要放标题或主体（bph 封面的片名在 y≈300，与标识重叠，新专题封面请让开；封面代码也不要再画自己的小标识）。",
+  "_comment": "GB 45438—2025《网络安全技术 人工智能生成合成内容标识方法》：视频起始画面加显式标识，文字高度 ≥ 画面最短边 5%（竖屏 1080 → 54 px），从起始画面起持续 ≥ 2 s。实现（OV.aiMark，白底墨色描边）：按实测字形高度（actualBoundingBoxAscent + Descent）迭代放大字号，直到 ≥ ceil(短边×min_ratio)+margin_px；从第 from 秒（0 = 第 0 帧，盖在封面上）起第 0 帧就满不透明、不做淡入，show_seconds 秒后用 fade_out 秒淡出（3.0 s ≥ 2 s 留余量）。text 含“AI”与“生成”两要素；投稿平台要求“人工智能生成合成”时只改这里。位置：竖屏左上 x 48、顶 y 252，避开平台 UI —— 第三方实测抖音竖屏播放页顶栏约到 y 240、右侧图标列从 y 840 起、底部 660 px 是文案区（未经本机真机核对，safe_area_verified 仍为 false）。片名（title）在标识退场前不入场（见 title._comment）。片尾 outro.ai_note 不变。渲染期 OV.lastAiMark 记录字号 / 实测字高 / 要求字高，render.js 汇总进 overlay.json 的 ai_mark，qa.py 判定。keepout：封面与 s01 前 3 s 的画面在 x 48–430、y 252–340 这一块不要放标题或主体（bph 封面的片名在 y≈300，与标识重叠，新专题封面请让开；封面代码也不要再画自己的小标识）。",
   "keepout": [
    48,
    252,

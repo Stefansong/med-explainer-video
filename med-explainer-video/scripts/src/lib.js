@@ -60,7 +60,7 @@ L.EXT = null;
 L.XR = (W = 1080) => (L.EXT ? L.EXT.x1 : W);                    // 右边界：横屏时 > W
 L.XL = () => (L.EXT && L.EXT.x0 < -400 ? L.EXT.x0 : 0);          // 左边界：只在舞台移到右侧时为负（舞台居左时保持原画面）
 // 皮克斯 3D 人物层（engine 每帧设置；本技能不带口型视频的生成流程，接口保留）：L.HIDE = {who: 'skip'|'faceless'} 让代码画的同一角色让位；L.PIXBG = under 模式的片段画法（L.bg 末尾调用）；
-//   L.NOFOOT 场景自己画整幅片段时置 1（底部水波不叠）。角色函数开头：const h = L.hide('laozhang'); if (h === 'skip') return; if (h === 'faceless') o = { ...o, noFace: true };
+//   L.NOFOOT 场景自己画整幅片段时置 1（页脚淡出不叠）。角色函数开头：const h = L.hide('laozhang'); if (h === 'skip') return; if (h === 'faceless') o = { ...o, noFace: true };
 L.HIDE = null; L.PIXBG = null; L.NOFOOT = 0;
 L.hide = (who) => ((L.HIDE && L.HIDE[who]) || null);
 // 3D 立绘（透明底，tools/cutout.py 抠底裁边并登记 storyboard.assets → A.img）：脚底中点 (x, yFeet)、高 h，脚下一块柔和阴影；呼吸 0.22 Hz、纵向 ±0.5%（慢，不哆嗦）。
@@ -93,23 +93,20 @@ L.pixCard = (c, A, id, x, yFeet, h, o = {}) => { const pv = A.media && A.media(i
   const w = h * (o.aspect || 0.8); x = Math.min(x, (o.right ?? L.safeRight(c)) - w / 2 - 3); const x0 = x - w / 2, y0 = yFeet - h * 1.02, k = Math.max(w / pv.width, h / pv.height) * (o.zoom || 1.12), R = o.rr ?? 36;
   L.fillRR(c, x0 + 8, y0 + 12, w, h, R, 'rgba(59,47,74,0.14)'); c.save(); L.rr(c, x0, y0, w, h, R); c.clip(); c.drawImage(pv, x - pv.width * k / 2, y0 - pv.height * k * (o.top ?? 0.03), pv.width * k, pv.height * k); c.restore();
   L.rr(c, x0, y0, w, h, R); c.lineWidth = 6; c.strokeStyle = o.ring || '#FFFFFF'; c.stroke(); return { x0, y0, w, h }; };
+// 背景：纯色底 + 几道很淡的斜向光带（缓慢平移）+ 规则点阵。col1 底色、col2 花纹色；seed 决定光带的位置和宽窄（每场给不同的 seed，画面不重样）
+const DOTS = {};   // 点阵图案缓存：颜色 → CanvasPattern
 L.bg = (c, W, H, col1, col2, seed = 3, t = 0) => {
   if (typeof SK !== 'undefined') SK.inBg = true;
   c.fillStyle = col1; c.fillRect(-2000, -2000, W + 4000, H + 4000);   // 多铺：场景层会被整体缩放 / 平移（engine），底色要盖满画布（横屏铺满整幅）
-  const R = L.rand(seed);
-  for (let i = 0; i < 6; i++) L.ellipse(c, R() * W, R() * H, 220 + R() * 260, 180 + R() * 220, L.alpha(col2, 0.55), R() * 3 + t * 0.02);
-  for (let i = 0; i < 26; i++) { const x = R() * W, y = (R() * H + t * (8 + R() * 10)) % H; L.circle(c, x, y, 4 + R() * 6, L.alpha(col2, 0.9)); }
-  if (L.EXT && L.EXT.x1 > W) {   // 横屏右侧延伸区：另取随机序列补色块和小点（竖屏 L.EXT 为 null，画面不变）
-    const R2 = L.rand(seed + 977), xw = L.EXT.x1 - W + 200, k = xw / W;
-    for (let i = 0; i < Math.round(6 * k); i++) L.ellipse(c, W - 100 + R2() * xw, R2() * H, 220 + R2() * 260, 180 + R2() * 220, L.alpha(col2, 0.55), R2() * 3 + t * 0.02);
-    for (let i = 0; i < Math.round(26 * k); i++) { const x = W - 100 + R2() * xw, y = (R2() * H + t * (8 + R2() * 10)) % H; L.circle(c, x, y, 4 + R2() * 6, L.alpha(col2, 0.9)); }
+  const R = L.rand(seed), x0 = L.EXT ? Math.min(-400, L.EXT.x0 - 200) : -400, x1 = L.EXT ? Math.max(W + 400, L.EXT.x1 + 200) : W + 400;
+  c.save(); c.translate(W / 2, H / 2); c.rotate(-0.44);   // 斜向光带：以画面中心为轴转 25°，带子足够长，横屏两侧也盖得到
+  for (let i = 0; i < 5; i++) { const off = -1180 + i * 520 + R() * 200 + 16 * Math.sin(t * 0.22 + i * 1.7), wd = 70 + R() * 170; c.fillStyle = L.alpha(col2, 0.42 + 0.3 * R()); c.fillRect(-4000, off, 8000, wd); }
+  c.restore();
+  if (typeof document !== 'undefined') {   // 点阵：每 56 px 一个小圆点
+    if (!DOTS[col2]) { const cv = document.createElement('canvas'); cv.width = cv.height = 56; const g = cv.getContext('2d'); g.fillStyle = col2; g.beginPath(); g.arc(28, 28, 3, 0, 7); g.fill(); DOTS[col2] = cv; }
+    c.save(); c.globalAlpha *= 0.8; c.fillStyle = c.createPattern(DOTS[col2], 'repeat'); c.fillRect(x0, -400, x1 - x0, H + 800); c.restore();
   }
-  if (L.EXT && L.EXT.x0 < -400) {   // 横屏左侧延伸区：只在舞台移到右边时；舞台居左时左缘只差几十单位，原有色块已盖住
-    const R3 = L.rand(seed + 1931), xw = -L.EXT.x0 + 200, k = xw / W;
-    for (let i = 0; i < Math.round(6 * k); i++) L.ellipse(c, 100 - R3() * xw, R3() * H, 220 + R3() * 260, 180 + R3() * 220, L.alpha(col2, 0.55), R3() * 3 + t * 0.02);
-    for (let i = 0; i < Math.round(26 * k); i++) { const x = 100 - R3() * xw, y = (R3() * H + t * (8 + R3() * 10)) % H; L.circle(c, x, y, 4 + R3() * 6, L.alpha(col2, 0.9)); }
-  }
-  if (L.PIXBG) L.PIXBG(c);   // 皮克斯片段 under 模式：画在背景之上、场景前景之下
+  if (L.PIXBG) L.PIXBG(c);   // 口型视频 under 模式：画在背景之上、场景前景之下
   if (typeof SK !== 'undefined') SK.inBg = false;
 };
 L.grain = (() => { let cache = null; return (c, W, H) => {

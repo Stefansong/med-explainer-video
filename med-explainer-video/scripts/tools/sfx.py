@@ -2,7 +2,7 @@
 """音效库（程序合成，不用外部素材；mix.py 从这里取）。每个音效是无参/带默认参数的函数，返回 48 kHz 单声道 float 数组（峰值约 0.3–0.8，响度由 storyboard.audio.sfx 的 gain 定）。
 storyboard.audio.sfx 条目：{"scene", "cue"|"at", "dt", "sfx": kind, "gain", "every", "count"|"until_cue"|"until", "params": {...}}；params 原样传给音效函数（如 snore 的 cycles、flush 的 dur）。
 kind 一览（docs/sfx.md 有时长、建议 gain、用途）：
-  pop 字卡弹出 | splash 转场水浪 | thud 落地闷响 | zap 激光/电 | crack 碎裂 | boing 弹簧 | chime 提示铃 | siren 警报 | tick 钟表嗒 | plip 水滴 | hiss 蒸汽/喷雾 | wind 风 | clink 金属碰 | chirp 鸟鸣/电子叫
+  tap 字卡出现（两声轻点，mix 自动加）| swish 转场气流声（mix 自动加）| pop 啵 | splash 水浪 | thud 落地闷响 | zap 激光/电 | crack 碎裂 | boing 弹簧 | chime 提示铃 | siren 警报 | tick 钟表嗒 | plip 水滴 | hiss 蒸汽/喷雾 | wind 风 | clink 金属碰 | chirp 鸟鸣/电子叫
   flush 马桶冲水 ~2.8 s（起势 → 水流漩涡 → 回落滴水）| snore 老年男性打鼾（吸气带鼾、呼气轻；cycles 次）| gasp 憋气后猛吸一口再喘两下 ~1.5 s（10-22 夜尿集 s08 手机录音）
 试听：python3 tools/sfx.py demo [out_dir]  → 每种一个 wav + 新三种连播（默认 render/sfx_demo/）"""
 import sys
@@ -114,7 +114,16 @@ def gasp():
     x = np.concatenate([first, np.zeros(int(0.12 * SR)), exhale(0.22, 0.5), inhale(0.22, 0.55, 600, 2000), np.zeros(int(0.1 * SR)), exhale(0.22, 0.35), inhale(0.2, 0.35, 600, 1800)])
     return _norm(x, 0.7)
 
-SFX = {'pop': pop, 'splash': splash, 'thud': thud, 'zap': zap, 'crack': crack, 'boing': boing, 'chime': chime, 'siren': siren, 'tick': tick, 'plip': plip, 'hiss': hiss, 'wind': wind, 'clink': clink, 'chirp': chirp, 'flush': flush, 'snore': snore, 'gasp': gasp}
+def tap():   # 字卡出现：两声很短的轻点，先低后高（G5 → D6）
+    n = int(0.17 * SR); tt = np.arange(n) / SR; d = int(0.055 * SR)
+    a = np.sin(2 * np.pi * 784 * tt) * env(n, 0.002, 0.03); b = np.zeros(n); b[d:] = (np.sin(2 * np.pi * 1175 * tt) * env(n, 0.002, 0.035))[:n - d]
+    return 0.8 * a + 0.7 * b
+def swish(dur=0.55):   # 转场：一道由低到高的气流声（带通噪声，中心频率 500 → 2600 Hz），两头渐入渐出
+    n = int(dur * SR); t = np.arange(n) / SR
+    y = _resonate(rng.standard_normal(n), 500 * (2600 / 500) ** (t / dur), 0.985) * np.sin(np.pi * t / dur) ** 1.5
+    return _norm(y, 0.5)
+
+SFX = {'tap': tap, 'swish': swish, 'pop': pop, 'splash': splash, 'thud': thud, 'zap': zap, 'crack': crack, 'boing': boing, 'chime': chime, 'siren': siren, 'tick': tick, 'plip': plip, 'hiss': hiss, 'wind': wind, 'clink': clink, 'chirp': chirp, 'flush': flush, 'snore': snore, 'gasp': gasp}
 
 def demo(out_dir='render/sfx_demo', level=0.5):
     """每种音效一个 wav（gain=level），再把新三种连播：冲水 → 0.8 s → 呼噜 ×2 → 1.2 s 憋气静默 → 猛喘"""

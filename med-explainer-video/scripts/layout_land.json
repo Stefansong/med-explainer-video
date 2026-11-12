@@ -4,6 +4,22 @@
  "orient": "land",
  "width": 1920,
  "height": 1080,
+ "theme": {
+  "name": "mint",
+  "accent": "#0FA573",
+  "accent_dark": "#0B7F5A",
+  "accent_soft": "#DDF3EA",
+  "ink": "#1F2A44",
+  "ink2": "#5B6785",
+  "alert": "#E5484D",
+  "alert_dark": "#B4232A",
+  "alert_soft": "#FDECEC",
+  "card": "#FFFFFF",
+  "sub_text": "#FFFFFF",
+  "paper": "244,248,246",
+  "sub_bg": "rgba(24,34,58,0.88)",
+  "shadow": "31,42,68"
+ },
  "safe_area_verified": true,
  "_safe_note": "横屏在网页播放器里看，没有抖音那种右侧按钮栏；safe.right_x 设为画幅宽，不触发 safe_right",
  "top_reserved": [
@@ -12,7 +28,7 @@
  ],
  "header": {
   "style": "nav",
-  "_comment": "顶部章节导航代替常驻片名：只列 chapters[].nav !== false 的章；当前章蓝底白字 + 章内进度细线，讲过的蓝字，没讲到的灰字；封面过后逐个弹入",
+  "_comment": "顶部章节导航代替常驻片名：只列 chapters[].nav !== false 的章；当前章主题色底白字 + 章内进度细线，讲过的主题色字，没讲到的灰字；封面过后逐个弹入",
   "x": 60,
   "y": 62,
   "size": 30,
@@ -22,7 +38,8 @@
   "connector": 24,
   "pop_start": 0.25,
   "pop_each": 0.12,
-  "pop_seconds": 0.42
+  "pop_seconds": 0.42,
+  "radius": 14
  },
  "title": {
   "enabled": false,
@@ -51,13 +68,13 @@
  },
  "labels": {
   "style": "board",
-  "_comment": "要点板：一块白板浮在右侧，板头 = 本场主题 scene.topic（蓝底）或本场最近一张 big 卡（红底）；条目按满格高度居中到 center_y；同屏格数 = (scene.max_labels || max_default) + extra_rows；超出时最老的淡出、其余上移",
+  "_comment": "要点板：一块白板浮在右侧，板头 = 本场主题 scene.topic（墨色底 + 主题色底线）或本场最近一张 big 卡（红底）；条目前一个小方块，最新一条浅主题色高亮；条目按满格高度居中到 center_y；同屏格数 = (scene.max_labels || max_default) + extra_rows；超出时最老的淡出、其余上移",
   "x": 1110,
   "width": 760,
   "head_height": 82,
   "row_height": 82,
   "pad": 16,
-  "radius": 28,
+  "radius": 18,
   "center_y": 544,
   "top_min": 150,
   "max_default": 3,
@@ -89,25 +106,26 @@
  },
  "subtitle": {
   "y": 1022,
-  "size": 64,
+  "size": 60,
   "center_x": 960,
   "max_width": 1500,
   "max_chars": 13,
-  "name_size": 34,
-  "stroke": 0.24,
+  "name_size": 32,
   "lead": 0.06,
   "tail": 0.3,
-  "_comment": "整幅居中；每行最多 13 字"
+  "_comment": "字幕条整幅居中；每行最多 13 字",
+  "bar_pad": 34,
+  "bar_height": 1.5,
+  "bar_radius": 20
  },
  "bottom_reserved": [
   1080,
   1080
  ],
  "footer": {
-  "waves": [
-   980,
-   1040
-  ],
+  "style": "fade",
+  "from": 960,
+  "alpha": 0.5,
   "enabled": true
  },
  "safe": {
@@ -142,7 +160,6 @@
   "size_min": 15,
   "line_height": 1.34,
   "gap": 0.34,
-  "bg": "#FFF8EE",
   "page_seconds_default": 5.0,
   "per_page_default": 10,
   "fade_in": 0.5,
@@ -154,10 +171,6 @@
    "HeiTiSub": {
     "src": "assets/fonts/HanSansSC-Subset-VF.otf",
     "weight": "250 900"
-   },
-   "DeYiHei": {
-    "src": "assets/fonts/SmileySans-Oblique.ttf",
-    "weight": "400"
    }
   },
   "sub": {
@@ -169,14 +182,14 @@
    "weight": 700
   },
   "title": {
-   "family": "\"DeYiHei\",\"HeiTiSub\"",
-   "weight": 400
+   "family": "\"HeiTiSub\"",
+   "weight": 900
   },
   "ref": {
    "family": "\"HeiTiSub\"",
    "weight": 400
   },
-  "_comment": "只用开源免费商用字体（思源黑体、得意黑，SIL OFL），不回退系统字体；tools/check_fonts.py 逐字核字形覆盖，qa 门 font_fallback"
+  "_comment": "只用开源免费商用字体（思源黑体子集，SIL OFL），不回退系统字体；tools/check_fonts.py 逐字核字形覆盖，qa 门 font_fallback"
  },
  "qa_gate": {
   "label_over_subtitle": 0,

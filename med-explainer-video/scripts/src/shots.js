@@ -32,14 +32,15 @@ const SH = {};
   SH.band = (c, y0, y1, col) => { c.fillStyle = col; c.fillRect(SH.FX0(), y0, SH.FX1() - SH.FX0(), y1 - y0); };
   SH.bg = (c, t, col1, col2, seed) => L.bg(c, W, H, col1 || P().paper, col2 || P().paper2, seed, t);
   SH.paper = (c, t, seed = 23) => SH.bg(c, t, P().paper, P().paper2, seed);
-  SH.home = (c, t, seed = 29) => { SH.bg(c, t, '#FFF4E2', '#FFE7C7', seed); SH.band(c, 1100, 1700, '#EBD3B4'); };
-  SH.clinic = (c, t, seed = 17) => { SH.bg(c, t, '#EAF4F8', '#D7EBF3', seed); SH.band(c, 1100, 1700, '#CFE0EA'); L.fillRR(c, 60, 300, 20, 760, 10, L.alpha('#9EC9E8', 0.5)); };
+  // 家里 / 诊室：墙 + 地面色带 + 一道踢脚线。颜色取调色板的 home / home2 / home_floor、clinic / clinic2 / clinic_floor（没写用默认）
+  SH.home = (c, t, seed = 29) => { const p = P(); SH.bg(c, t, p.home || '#EEF2F6', p.home2 || '#DEE6EE', seed); SH.band(c, 1100, 1700, p.home_floor || '#C8D3DD'); SH.band(c, 1100, 1110, 'rgba(255,255,255,0.75)'); };
+  SH.clinic = (c, t, seed = 17) => { const p = P(); SH.bg(c, t, p.clinic || '#F1F5FB', p.clinic2 || '#DFE8F5', seed); SH.band(c, 1100, 1700, p.clinic_floor || '#C6D3E6'); SH.band(c, 1100, 1110, 'rgba(255,255,255,0.75)'); SH.band(c, 880, 900, L.alpha(p.clinic_line || '#9FB6DA', 0.55)); };
   SH.nightBg = (c, t, seed = 31) => { c.fillStyle = P().night; SH.fillAll(c); const R = L.rand(seed); for (let k = 0; k < 36; k++) L.circle(c, R() * W, 236 + R() * 760, 2 + R() * 3, `rgba(255,240,200,${0.25 + 0.25 * Math.sin(t * 2 + k)})`); };
   SH.floor = (c, y, col = '#2A3150', col2 = '#333B5E') => { c.fillStyle = col; c.fillRect(SH.FX0(), y, SH.FX1() - SH.FX0(), 1920 - y + 300); for (let i = -1; i < 10; i++) L.fillRR(c, i * 120 + 10, y + 20, 104, 60, 8, col2); };
   SH.paperFloor = (c, y = 1180) => L.fillRR(c, 60, y, 960, 56, 28, L.alpha(P().stone || '#D9B98F', 0.42));
 
   // ---------- 圆窗（放大镜 / 剖面窗）----------
-  SH.ring = (c, x, y, r, col, w = 12) => { L.circle(c, x + 8, y + 12, r + w, 'rgba(59,47,74,0.10)'); L.circle(c, x, y, r + w, col || P().ink); L.circle(c, x, y, r, '#FFF8EC'); };
+  SH.ring = (c, x, y, r, col, w = 12) => { L.circle(c, x + 8, y + 12, r + w, 'rgba(59,47,74,0.10)'); L.circle(c, x, y, r + w, col || P().ink); L.circle(c, x, y, r, P().white || '#FFFFFF'); };
   SH.inRing = (c, x, y, r, col, fn, w = 12) => { SH.ring(c, x, y, r, col, w); c.save(); c.beginPath(); c.arc(x, y, r, 0, 7); c.clip(); fn(); c.restore(); };
 
   // ---------- 3D 立绘 / 图标 ----------

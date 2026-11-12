@@ -29,7 +29,7 @@ MOS = int(LBC.get('max_on_screen') or 0)                            # 同屏上�
 MIN_STAY, MIN_STAY_ALERT = float(LBC.get('min_stay', 2.5)), float(LBC.get('min_stay_alert', 3.5))   # 字卡停留下限（普通 / 危险信号）
 MAX_EXT = float(TM.get('max_extend', 2.0))                          # 场景结束导致停留不足时，每场最多延长的秒数（无旁白、配乐继续）
 EXTRA = int(LBC.get('extra_rows') or 0)                             # 横屏要点板：同屏格数再加 extra_rows（竖屏 0）
-BIG_SLOT = LBC.get('style') != 'board'                              # 竖屏贴纸胶囊 big 占第 0 格；横屏要点板 big 是板头、不占格
+BIG_SLOT = LBC.get('style') != 'board'                              # 竖屏标签卡 big 占第 0 格；横屏要点板 big 是板头、不占格
 CARD_STAYS, WARN = [], []
 def norm(s): return re.sub(r'[^一-鿿A-Za-z0-9.]', '', s)
 

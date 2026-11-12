@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""timeline + 逐句配音 → 程序化 BGM（木琴/拨弦/铺底/贝斯，轻快大调；可按 storyboard.audio.bgm 指定小调段、安静段）
-+ 音效（字卡 pop、转场水浪 是通用的；其余音效由 storyboard.audio.sfx 按 cue 声明）→ 人声闪避混音 → render/mix.wav / mix.m4a（-16 LUFS）+ 分轨 stem_*.wav（ORIENT=land：render/land/，按横屏 timeline 混）
+"""timeline + 逐句配音 → 程序化 BGM（电钢琴分解和弦 / 铺底 / 贝斯，F 大调；可按 storyboard.audio.bgm 指定小调段、安静段）
++ 音效（字卡出现的轻点、转场气流声 是通用的；其余音效由 storyboard.audio.sfx 按 cue 声明）→ 人声闪避混音 → render/mix.wav / mix.m4a（-16 LUFS）+ 分轨 stem_*.wav（ORIENT=land：render/land/，按横屏 timeline 混）
 片头语音标识（GB 45438 ③，只对纯音频作品；默认关）：cover.ai_voice_on 为 true 时把 audio/lines/s00_ai.wav（自己录一句“本视频含人工智能生成内容”）放在 cover.ai_voice_at（默认 0.35 s）。
-人声链（bph 10-13/14 定稿）：低通 11.5 kHz 去重采样镜像 → 轻度分频去齿音 → 停顿彻底静音 → 预先 0.3 s 闪避、保持 0.6 s。
+人声链：低通 11.5 kHz 去重采样镜像 → 轻度分频去齿音 → 停顿彻底静音 → 预先 0.3 s 闪避、保持 0.6 s。
 storyboard.audio 示例：
-  "bgm": {"bpm": 104, "minor": [["s06", "night", "f1"]], "quiet": [["s01", null, null]]}   区间 = [场, 起 cue（null=场首）, 止 cue（null=场尾）]
-    quiet 默认只抽掉木琴、拨弦，铺底和贝斯照常；"quiet_gain": 0.2 之类（默认 1.0，旧专题逐位不变）让安静段整段配乐再乘这个增益，进出各 0.3 s 线性渐变，没人说话时的音效才听得清（夜尿集 s08 录音）；
+  "bgm": {"bpm": 92, "minor": [["s06", "night", "f1"]], "quiet": [["s01", null, null]]}   区间 = [场, 起 cue（null=场首）, 止 cue（null=场尾）]
+    quiet 默认只留每小节第一个琴音，铺底和贝斯照常；"quiet_gain": 0.2 之类（默认 1.0）让安静段整段配乐再乘这个增益，进出各 0.3 s 线性渐变，没人说话时的音效才听得清；
     只压某一段就给那个区间写第 4 个元素：["s08", "deny", "doze", 0.2]（优先于 quiet_gain）。
   "sfx": [{"scene": "s06", "cue": "aur", "dt": 0.0, "sfx": "thud", "gain": 0.25}, {"scene": "s01", "at": 0.1, "sfx": "tick", "gain": 0.08, "every": 1.0, "until_cue": "bath"},
           {"scene": "s08", "cue": "laser", "sfx": "zap", "gain": 0.022, "every": 0.45, "count": 5}]
-    sfx 名：pop splash thud zap crack boing chime siren tick plip hiss wind clink chirp flush snore gasp（tools/sfx.py，kind 一览与建议 gain 见 docs/sfx.md）；at = 场内秒（与 cue 二选一）；params: {"cycles": 3} 之类原样传给音效函数；
+    sfx 名：tap swish pop splash thud zap crack boing chime siren tick plip hiss wind clink chirp flush snore gasp（tools/sfx.py，kind 一览与建议 gain 见 references/sfx.md）；at = 场内秒（与 cue 二选一）；params: {"cycles": 3} 之类原样传给音效函数；
     重复：every + count（相对 cue 重复 N 次）或 every + until_cue / until（重复到某时刻）。bgm.from_cover 默认 false（配乐从 0 s 起）。
 运行：python tools/mix.py"""
 import json, subprocess, re, sys, os
@@ -36,45 +36,43 @@ S = {s['id']: s for s in TL['scenes']}; LAST = TL['scenes'][-1]['id']
 def span(rng_):
     sid, c0, c1 = rng_; s = S[sid]
     return (s['start'] + (s['cues'][c0] if c0 else 0) - 0.3, s['start'] + (s['cues'][c1] if c1 else s['end'] - s['start']) - 0.3)
-# ---------- BGM ----------
-BPM = BG.get('bpm', 104); beat = 60 / BPM; bar = 4 * beat
+# ---------- BGM：电钢琴分解和弦 + 铺底 + 贝斯。F 大调 I–vi–ii–V（小调段 Dm–B♭–Gm–A），默认每分钟 92 拍 ----------
+BPM = BG.get('bpm', 92); beat = 60 / BPM; bar = 4 * beat
 def midi(m): return 440 * 2 ** ((m - 69) / 12)
 def env(n, a, d): t = np.arange(n) / SR; return np.minimum(1, t / max(a, 1e-4)) * np.exp(-t / d)
-def marimba(f, dur=0.8, v=1.0):
+def keys(f, dur=1.1, v=1.0):   # 电钢琴：基音 + 衰减快一些的二次泛音 + 一点四次泛音，起音 6 ms（都是衰减正弦，停顿里没有噪声成分）
     n = int(dur * SR); t = np.arange(n) / SR
-    return v * (np.sin(2 * np.pi * f * t) * env(n, 0.004, 0.28) + 0.08 * np.sin(2 * np.pi * f * 3.93 * t) * env(n, 0.004, 0.05))   # 高泛音 0.08、起音 4 ms（停顿里不像沙锤）
-def pluck(f, dur=0.5, v=1.0):
-    n = int(dur * SR); t = np.arange(n) / SR; x = sum(np.sin(2 * np.pi * f * k * t) / k ** 2 for k in range(1, 4)); return v * x * env(n, 0.006, 0.12)
+    return v * (np.sin(2 * np.pi * f * t) * env(n, 0.006, 0.42) + 0.28 * np.sin(4 * np.pi * f * t) * env(n, 0.006, 0.18) + 0.05 * np.sin(8 * np.pi * f * t) * env(n, 0.004, 0.06))
+def glass(f, dur=1.2, v=1.0): n = int(dur * SR); t = np.arange(n) / SR; return v * np.sin(2 * np.pi * f * t) * env(n, 0.01, 0.5)   # 高处一声轻的点缀
 def pad(freqs, dur, v=1.0):
     n = int(dur * SR); t = np.arange(n) / SR; x = sum(np.sin(2 * np.pi * f * t) + 0.5 * np.sin(2 * np.pi * f * 1.004 * t + 1) for f in freqs)
     e = np.minimum(1, t / 0.5) * np.minimum(1, (dur - t) / 0.5); return v * x * e / len(freqs)
-def bass(f, dur=0.5): n = int(dur * SR); t = np.arange(n) / SR; return np.sin(2 * np.pi * f * t) * env(n, 0.005, 0.22) + 0.3 * np.sin(4 * np.pi * f * t) * env(n, 0.005, 0.08)
-MAJ = [(48, [60, 64, 67]), (43, [59, 62, 67]), (45, [57, 60, 64]), (41, [57, 60, 65])]      # C G Am F
-MIN = [(45, [57, 60, 64]), (41, [57, 60, 65]), (43, [59, 62, 67]), (40, [56, 59, 64])]      # Am F G E
-MEL = [0, 2, 1, 2, 0, 1, 2, 1]
+def bass(f, dur=0.9): n = int(dur * SR); t = np.arange(n) / SR; return np.sin(2 * np.pi * f * t) * env(n, 0.008, 0.38) + 0.25 * np.sin(4 * np.pi * f * t) * env(n, 0.008, 0.12)
+MAJ = [(41, [60, 65, 69]), (38, [62, 65, 69]), (43, [62, 67, 70]), (48, [60, 64, 67])]      # F Dm Gm C
+MIN = [(38, [62, 65, 69]), (46, [62, 65, 70]), (43, [62, 67, 70]), (45, [61, 64, 69])]      # Dm B♭ Gm A
+PAT = [(0.0, 0), (1.0, 1), (1.5, 2), (2.5, 1), (3.0, 2)]   # 一小节五个音：（第几拍, 和弦里第几个音）
 minor = [span(r) for r in BG.get('minor', [])]; quiet = [span(r[:3]) for r in BG.get('quiet', [])]
-t = TL.get('cover', 0.0) if BG.get('from_cover') else 0.0; k = 0   # bgm.from_cover 默认 false：配乐与小节网格从 0 s 起（封面有音乐，bph 验收版如此）
+t = TL.get('cover', 0.0) if BG.get('from_cover') else 0.0; k = 0   # bgm.from_cover 默认 false：配乐与小节网格从 0 s 起（封面有音乐）
 while t < TL['duration'] - 0.3:
     is_min = any(a <= t < b for a, b in minor); is_q = any(a <= t < b for a, b in quiet)
     root, ch = (MIN if is_min else MAJ)[k % 4]
-    add(bgm, pad([midi(m - 12) for m in ch], bar + 0.5, 0.16), t)
-    add(bgm, 0.5 * bass(midi(root)), t); add(bgm, 0.35 * bass(midi(root)), t + 2 * beat); add(bgm, 0.25 * bass(midi(root + 7)), t + 3 * beat)
-    for q, idx in enumerate(MEL):
-        if (is_min or is_q) and q % 2: continue
-        if is_q and q % 4: continue
-        m = ch[idx] + 12 + (12 if (q == 6 and k % 2 == 0 and not is_min) else 0)
-        add(bgm, marimba(midi(m), v=0.30 if q % 2 == 0 else 0.2), t + q * beat / 2)
-    if not is_min and not is_q:
-        for q in (1, 3): add(bgm, pluck(midi(ch[2] + 12), v=0.10), t + q * beat)   # 拨弦只高一个八度（两八度在停顿里像高频打击乐）；沙锤已去掉
+    add(bgm, pad([midi(m - 12) for m in ch], bar + 0.5, 0.15), t)
+    add(bgm, 0.5 * bass(midi(root)), t); add(bgm, 0.28 * bass(midi(root + 7), 0.6), t + 2 * beat)
+    for q, (pos, idx) in enumerate(PAT):
+        if (is_min or is_q) and q in (1, 3): continue   # 小调段、安静段抽掉一半的音
+        if is_q and q != 0: continue                    # 安静段只留每小节第一个音
+        m = ch[idx] + 12 + (12 if (q == 4 and k % 4 == 3 and not is_min) else 0)   # 每四小节的最后一个音翻高八度，收一句
+        add(bgm, keys(midi(m), v=0.30 if pos == int(pos) else 0.2), t + pos * beat)
+    if not is_min and not is_q and k % 2 == 1: add(bgm, glass(midi(ch[2] + 24), v=0.05), t + 3.5 * beat)
     t += bar; k += 1
 bgm = ss.sosfiltfilt(ss.butter(4, 3500, 'lowpass', fs=SR, output='sos'), bgm)   # 配乐整体低通 3.5 kHz，去掉停顿里刺耳的高频成分
 fi = int(1.0 * SR); bgm[:fi] *= np.linspace(0, 1, fi); fo = int(3.0 * SR); end = int(TL['duration'] * SR); bgm[end - fo:end] *= np.linspace(1, 0, fo); bgm[end:] = 0
-# ---------- SFX 库：tools/sfx.py（pop splash thud zap crack boing chime siren tick plip hiss wind clink chirp + flush snore gasp；kind 一览见 docs/sfx.md）----------
-from sfx import SFX, pop, splash, rng   # 同一个 rng（种子 3）、同样的调用顺序 → 旧专题混音逐位不变（bph_on_template 横屏 mix.wav 比对为证）
-# 通用：字卡 pop、转场水浪（在下一场第一个字之前收尾）
+# ---------- SFX 库：tools/sfx.py（kind 一览见 references/sfx.md）----------
+from sfx import SFX, tap, swish
+# 通用：字卡出现的两声轻点、转场的气流声（和画面上的斜向色带同时扫过）
 for sc in TL['scenes']:
-    for lb in sc.get('labels', []): add(sfx, pop(), sc['start'] + lb['t'], 0.045)
-    if sc['id'] != LAST: add(sfx, splash()[:int(0.6 * SR)] * np.linspace(1, 0, int(0.6 * SR)) ** 0.5, sc['end'] - 0.6, 0.12)   # 最后一场（竖屏 s99 / 横屏 sref）之后没有转场
+    for lb in sc.get('labels', []): add(sfx, tap(), sc['start'] + lb['t'], 0.04)
+    if sc['id'] != LAST: add(sfx, swish(), sc['end'] - 0.3, 0.10)   # 最后一场（竖屏 s99 / 横屏 sref）之后没有转场
 # 专题声明的音效（事件表写 render/sfx_events.json，方便核对 count/every 改写前后是否等价）
 EVENTS = []
 for ev in AU.get('sfx', []):

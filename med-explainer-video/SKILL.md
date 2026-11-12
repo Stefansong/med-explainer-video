@@ -56,7 +56,7 @@ python "$SKILL/scripts/pipeline.py" animatic <工作目录>/demo
 
 | 阶段 | 命令（`P="$SKILL/scripts/pipeline.py"`） | 产物 | 停点 |
 |---|---|---|---|
-| 建专题 | `python $P new <project> --title "片名" --dir <工作目录>` | `<工作目录>/<project>/` | |
+| 建专题 | `python $P new <project> --title "片名" --dir <工作目录> [--theme mint\|indigo\|amber]` | `<工作目录>/<project>/` | |
 | S0 口径与分镜 | 你写 `design/storyboard_<project>.json` → `python $P check <专题>` → `python $P s0 <专题>` | 修订稿 `design/<project>_修订稿_v<ver>.md` / `.docx` | **HARD S0** |
 | S3 角色与配音分工 | 你用平台生图出定妆图 → `tools/cutout.py` 抠底登记 → `python $P s3 <专题>` | `assets/lib/characters/`、`scenes/`、`props/` | **HARD S3** |
 | 配音 | `python $P voice <专题>` → 用户照 `audio/台词本.docx` 录音放进 `audio/recordings/` → 再跑一次 | `audio/lines/*.wav` + `lines.json` | 缺录音停（退出码 6） |
@@ -65,6 +65,8 @@ python "$SKILL/scripts/pipeline.py" animatic <工作目录>/demo
 | 正式版 + QA | `python $P run <专题> --until qa` | `render/<project>_final.mp4` + `.qa.json` | QA 不过退出码 2 |
 | 成片审核 + 交付 | `python $P run <专题> --until deliver` | `render/deliver_final.json` | 等审核（退出码 5） |
 | 清理 | `python $P clean <专题>`，看过清单再 `--apply` | 旧版本移进回收站 | |
+
+配色有三套主题：`mint` 薄荷绿（默认）、`indigo` 靛蓝、`amber` 琥珀。建专题时问用户想要哪一套；之后想换跑 `python $P theme <专题> <主题名>`，想要自己的颜色就改专题 `layout.json` 的 `theme`（见 `references/layout.md`）。
 
 没录音也能先调画面：`python $P timeline <专题> --estimate` 按字数估时长，再 `frames` / `animatic`。`python $P status <专题>` 看各阶段状态。退出码：0 完成，2 失败，3 停在 HARD 点，5 等审核，6 等录音，7 后台任务还在跑。
 
@@ -160,7 +162,7 @@ python $P wait <专题>                      # 等最多 90 秒，打印最近�
 | `references/characters_3d.md` | S3 出图前：定妆图、场景图、姿势图提示词，抠底与登记 |
 | `references/voice_recording.md` | 出台词本、导入录音、看回读结果时 |
 | `references/anatomy.md` | 画解剖前 |
-| `references/layout.md` | 改版式（字号、位置、安全区）时 |
+| `references/layout.md` | 换主题色、改版式（字号、位置、安全区）时 |
 | `references/sfx.md` | 加音效时 |
 | `references/review.md` | 审片方法（扫描工具、怎么取证） |
 | `references/audit_pre_prompt.md` / `audit_post_prompt.md` | 交给独立审核员的提示词，原样使用 |

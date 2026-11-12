@@ -1,6 +1,7 @@
-// 叠字层：顶部进度条 + 章节名（横屏：章节导航）、开场片名、要点字卡（竖屏贴纸胶囊 / 横屏要点板）、字幕（按字级时间戳分块）、片尾、参考文献页（sref）、AI 生成标识。画面层不含任何文字。
+// 叠字层：顶部进度轨 + 章节名（横屏：章节导航）、开场片名横幅、要点字卡（竖屏左色条标签卡 / 横屏要点板）、字幕条（按字级时间戳分块）、片尾、参考文献页（sref）、AI 生成标识。画面层不含任何文字。
+// 颜色全部来自 layout.json 的 theme（主题色），换一套配色只改 theme；pipeline.py new --theme <名字> 可在建专题时选预设。
 // 版式全部来自 layout.json / layout_land.json（OV.setLayout；画幅由 width/height 决定），专题常量（角色名牌、片尾文献、免责声明、章节、本场主题）全部来自 storyboard（OV.setStoryboard）。本文件不写任何专题数据。
-// 横屏（layout_land.json）：header.style "nav" 章节导航、labels.style "board" 要点板、ai_mark.anchor "bottom_right"、refs 文献页、title.enabled false —— 移植自 bph/src/overlay.js（10-20 交付版），数值全在 layout_land.json。
+// 横屏（layout_land.json）：header.style "nav" 章节导航、labels.style "board" 要点板、ai_mark.anchor "bottom_right"、refs 文献页、title.enabled false，数值全在 layout_land.json。
 // 渲染期自检（OV.CHECK）：字卡底边越过字幕顶边 / 两张卡同一格位 / 字卡越出字卡区 / 字幕或字卡缩字号 / 右缘越过安全区 —— 只计数不中断，render.js 收集后写进 qa.json。
 'use strict';
 const OV = {};
@@ -10,18 +11,25 @@ const OV = {};
   OV.LAYOUT = {
     width: 1080, height: 1920, safe_area_verified: false,
     top_reserved: [0, 120],
-    header: { band: [120, 230], bar_y: 140, bar_height: 14, bar_margin_x: 90, bar_gap: 12, chapter_y: 192, chapter_size: 56, chapter_chip: true, chapter_chip_height: 72 },
-    title: { size: 72, y: 300, until_seconds: 5, min_seconds: 3.0, fade_in: 0.5, fade_out: 0.6, max_width: 980, keepout_design_y: [236, 420] },
+    header: { band: [120, 230], bar_y: 140, bar_height: 8, bar_margin_x: 60, node: 11, chapter_x: 60, chapter_y: 196, chapter_size: 50 },
+    title: { size: 66, y: 300, pad_x: 44, radius: 20, until_seconds: 5, min_seconds: 3.0, fade_in: 0.5, fade_out: 0.6, max_width: 980, keepout_design_y: [236, 420] },
     stage: { top: 230, bottom: 1300, design_top: 236, design_bottom: 1236, scale: 1.0 },
     ai_mark: { text: 'AI 生成内容', min_ratio: 0.05, margin_px: 4, from: 0, show_seconds: 3.0, fade_out: 0.5, x: 48, y: 252 },
-    labels: { style: 'pill', band: [1300, 1452], x: 60, width: 840, max_default: 2, max_on_screen: 3, min_stay: 2.5, min_stay_alert: 3.5, size: 48, row_height: 70, gap: 14, big_size: 50, big_pad: 40, pad_l: 30, dot: 16, dot_gap: 18, pad_r: 34, radius: 'half', shadow: { alpha: 0.08, dy: 5, blur: 10 }, alert_ring: 3, secondary_weight: 500, dot_dim_alpha: 0.6, pop: { seconds: 0.4, text_fade: 0.25, leave_rise: 12 }, compact: { size: 40, row_height: 54, gap: 12, dot: 14, big_size: 46 }, newest_highlight_seconds: 2.2 },
-    subtitle: { y: 1552, size: 74, center_x: 480, max_width: 840, max_chars: 11, name_size: 36, stroke: 0.24, lead: 0.06, tail: 0.3 },
+    labels: { style: 'tag', band: [1300, 1452], x: 60, width: 840, max_default: 2, max_on_screen: 3, min_stay: 2.5, min_stay_alert: 3.5, size: 48, row_height: 70, gap: 14, big_size: 50, big_pad: 40, bar: 12, pad_l: 22, dot: 34, dot_gap: 14, pad_r: 30, radius: 16, shadow: { alpha: 0.10, dy: 5, blur: 10 }, alert_ring: 0, secondary_weight: 500, dot_dim_alpha: 0.55, pop: { seconds: 0.4, text_fade: 0.25, leave_rise: 12 }, compact: { size: 40, row_height: 54, gap: 12, dot: 28, big_size: 46 }, newest_highlight_seconds: 2.2 },
+    subtitle: { y: 1552, size: 68, center_x: 540, max_width: 840, max_chars: 11, name_size: 34, bar_pad: 32, bar_height: 1.52, bar_radius: 22, lead: 0.06, tail: 0.3 },
     bottom_reserved: [1600, 1920],
-    footer: { waves: [1700, 1760], enabled: true },
+    footer: { style: 'fade', from: 1640, enabled: true },
     safe: { right_x: 900, y_from: 900, y_to: 1600 },
     outro: { slogan_y: 1060, slogan_size: 56, block_y: 1200, disclaimer_size: 42, ai_note_size: 32, ref_size: 27, ref_line: 40, credit_size: 24, max_width: 1000 },
-    fonts: { sub: { family: '"HeiTiSub"', weight: 900 }, label: { family: '"HeiTiSub"', weight: 700 }, title: { family: '"DeYiHei","HeiTiSub"', weight: 400 }, ref: { family: '"HeiTiSub"', weight: 400 } },   // 只用开源字体、不写系统回退（10-21 用户定）；缺字由 tools/check_fonts.py 在 QA 门报出
+    fonts: { sub: { family: '"HeiTiSub"', weight: 900 }, label: { family: '"HeiTiSub"', weight: 700 }, title: { family: '"HeiTiSub"', weight: 900 }, ref: { family: '"HeiTiSub"', weight: 400 } },   // 只用开源字体、不写系统回退；缺字由 tools/check_fonts.py 在 QA 门报出
+    theme: {},
   };
+  // ---------- 主题色：叠字层所有颜色都从 layout.theme 取（没写的键用这里的默认值 = “薄荷”主题）----------
+  //   accent 主色（章节块、进度、字卡色条、片名横幅）/ accent_dark / accent_soft；ink 正文墨色 / ink2 次要文字；alert 危险信号红 / alert_dark / alert_soft；
+  //   card 字卡底；paper 顶部遮罩与文献页底色（写成 "r,g,b"）；sub_bg 字幕条底 / sub_text 字幕字色；shadow 投影色（"r,g,b"）
+  const TH0 = { accent: '#0FA573', accent_dark: '#0B7F5A', accent_soft: '#DDF3EA', ink: '#1F2A44', ink2: '#5B6785', alert: '#E5484D', alert_dark: '#B4232A', alert_soft: '#FDECEC', card: '#FFFFFF', paper: '244,248,246', sub_bg: 'rgba(24,34,58,0.88)', sub_text: '#FFFFFF', shadow: '31,42,68' };
+  const TH = () => Object.assign({}, TH0, OV.LAYOUT.theme || {});
+  OV.theme = TH;
   const merge = (a, b) => { for (const k in b) { if (k.startsWith('_')) continue; if (b[k] && typeof b[k] === 'object' && !Array.isArray(b[k]) && a[k] && typeof a[k] === 'object' && !Array.isArray(a[k])) merge(a[k], b[k]); else a[k] = b[k]; } return a; };
   const fontsReady = () => { const F = OV.LAYOUT.fonts; F.label2 = { family: F.label.family, weight: (OV.LAYOUT.labels || {}).secondary_weight || 500 }; return F; };   // 字卡说明段：同字体、细一档
   OV.setLayout = (j) => { merge(OV.LAYOUT, j || {}); OV.FONTS = fontsReady(); W = OV.LAYOUT.width || 1080; HGT = OV.LAYOUT.height || 1920; OV._aiFont = null; refCache = null; };
@@ -69,63 +77,73 @@ const OV = {};
       if (i < parts.length - 1) { const w = AW(size), m = size * 0.11; L.line(c, [[cx + w * 0.18, y + 1], [cx + w * 0.8, y + 1]], m, col); L.line(c, [[cx + w * 0.58, y - size * 0.2], [cx + w * 0.82, y + 1], [cx + w * 0.58, y + size * 0.22]], m, col); cx += w; } });
   };
 
-  // ---------- 顶部：分段进度条 + 当前章节名（片名不常驻；0–120 留给平台顶栏） ----------
-  // 横屏顶部章节导航（layout.header.style = "nav"，bph 10-20 D 改良要点板）：只列 storyboard.chapters[].nav !== false 的章；当前章蓝底白字 + 章内进度细线，讲过的蓝字，没讲到的灰字；封面过后逐个弹入（每颗间隔 pop_each 秒，轻微回弹）
+  // ---------- 顶部：进度轨（每章一个节点）+ 左对齐的“序号块 + 章节名”（片名不常驻；0–120 留给平台顶栏） ----------
+  // 横屏顶部章节导航（layout.header.style = "nav"）：只列 storyboard.chapters[].nav !== false 的章；当前章主题色底白字 + 章内进度细线，讲过的主题色字，没讲到的灰字；封面过后逐个弹入（每颗间隔 pop_each 秒，轻微回弹）
   const navLock = (c, SB, TL, T) => {
     const P = L.P, Hd = OV.LAYOUT.header, chs = TL.chapters || [], n = chs.length; if (!n) return;
     let ci = chs.findIndex((ch) => T >= ch.start && T < ch.end); if (ci < 0) ci = n - 1;
     const meta = SB.chapters || [], sz = Hd.size || 30, h = Hd.height || 60, pad = Hd.pad ?? 52, T0 = (TL.cover || 0) + (Hd.pop_start ?? 0.25), each = Hd.pop_each ?? 0.12, dur = Hd.pop_seconds ?? 0.42;
     const vis = chs.map((ch, k) => ({ ch, k })).filter((o) => { const m = meta.find((q) => q.id === o.ch.id) || meta[o.k]; return !(m && m.nav === false); });
     let x = Hd.x ?? 60; const y = Hd.y ?? 62;
+    const th = TH(), RR = Hd.radius ?? 14;
     vis.forEach((o, j) => {
       const name = o.ch.node, st = o.k < ci ? 'done' : o.k === ci ? 'cur' : 'todo';
       c.font = fnt(sz, 'label'); const w = c.measureText(name).width + pad;
       const pe = L.clamp((T - T0 - j * each) / dur); if (pe <= 0) return; const ps = L.lerp(0.6, 1, L.backOut(pe));
       c.save(); c.globalAlpha *= L.clamp(pe * 1.8); c.translate(x + w / 2, y); c.scale(ps, ps); c.translate(-(x + w / 2), -y);
-      L.fillRR(c, x + 3, y - h / 2 + 5, w, h, h / 2, 'rgba(59,47,74,0.10)');
+      L.fillRR(c, x + 3, y - h / 2 + 5, w, h, RR, `rgba(${th.shadow},0.10)`);
       if (st === 'cur') {
-        L.fillRR(c, x, y - h / 2, w, h, h / 2, P.water_dark); txt(c, name, x + w / 2, y - 4, sz, '#FFFFFF', null, 'label');
-        const f = L.clamp((T - o.ch.start) / (o.ch.end - o.ch.start)); L.fillRR(c, x + 24, y + h / 2 - 12, w - 48, 4, 2, 'rgba(255,255,255,0.28)'); L.fillRR(c, x + 24, y + h / 2 - 12, Math.max(4, (w - 48) * f), 4, 2, '#FFFFFF');
+        L.fillRR(c, x, y - h / 2, w, h, RR, th.accent); txt(c, name, x + w / 2, y - 4, sz, '#FFFFFF', null, 'label');
+        const f = L.clamp((T - o.ch.start) / (o.ch.end - o.ch.start)); L.fillRR(c, x + 20, y + h / 2 - 12, w - 40, 4, 2, 'rgba(255,255,255,0.30)'); L.fillRR(c, x + 20, y + h / 2 - 12, Math.max(4, (w - 40) * f), 4, 2, '#FFFFFF');
       } else {
-        L.fillRR(c, x, y - h / 2, w, h, h / 2, 'rgba(255,255,255,0.90)');
-        txt(c, name, x + w / 2, y + 1, sz, st === 'done' ? P.water_dark : 'rgba(80,70,92,0.55)', null, 'label');
+        L.fillRR(c, x, y - h / 2, w, h, RR, 'rgba(255,255,255,0.92)');
+        txt(c, name, x + w / 2, y + 1, sz, st === 'done' ? th.accent_dark : `rgba(${th.shadow},0.5)`, null, 'label');
       }
       c.restore(); x += w;
-      if (j < vis.length - 1) { const ce = L.clamp((T - T0 - j * each - 0.2) / 0.25); if (ce > 0) L.fillRR(c, x + 8, y - 2, (Hd.connector ?? 24) * ce, 4, 2, o.k < ci ? P.water_dark : 'rgba(255,255,255,0.8)'); x += Hd.gap ?? 40; }
+      if (j < vis.length - 1) { const ce = L.clamp((T - T0 - j * each - 0.2) / 0.25); if (ce > 0) L.fillRR(c, x + 8, y - 2, (Hd.connector ?? 24) * ce, 4, 2, o.k < ci ? th.accent : 'rgba(255,255,255,0.8)'); x += Hd.gap ?? 40; }
     });
   };
   OV.header = (c, SB, TL, T) => {
-    const P = L.P, Lt = OV.LAYOUT, Hd = Lt.header; if (Hd && Hd.style === 'nav') return navLock(c, SB, TL, T);
+    const Lt = OV.LAYOUT, Hd = Lt.header, th = TH(); if (Hd && Hd.style === 'nav') return navLock(c, SB, TL, T);
     const a = L.fin(T, (TL.cover || 0) + 0.15, 0.6);   // 从正片开始（封面之后）淡入
     if (a <= 0) return;
     c.save(); c.globalAlpha *= a;
-    const gh = Lt.stage.top + 10, gr = c.createLinearGradient(0, 0, 0, gh); const hb = OV.dark ? '12,14,38' : '255,244,226'; gr.addColorStop(0, `rgba(${hb},0.96)`); gr.addColorStop(0.8, `rgba(${hb},0.88)`); gr.addColorStop(1, `rgba(${hb},0)`); c.fillStyle = gr; c.fillRect(0, 0, W, gh);
+    const gh = Lt.stage.top + 10, gr = c.createLinearGradient(0, 0, 0, gh); const hb = OV.dark ? '12,14,38' : th.paper; gr.addColorStop(0, `rgba(${hb},0.97)`); gr.addColorStop(0.78, `rgba(${hb},0.9)`); gr.addColorStop(1, `rgba(${hb},0)`); c.fillStyle = gr; c.fillRect(0, 0, W, gh);
     const chs = TL.chapters || [], n = chs.length; if (!n) { c.restore(); return; }
     let ci = chs.findIndex((ch) => T >= ch.start && T < ch.end); if (ci < 0) ci = n - 1;
-    const x0 = Hd.bar_margin_x, x1 = W - Hd.bar_margin_x, gap = Hd.bar_gap, sw = (x1 - x0 - gap * (n - 1)) / n, by = Hd.bar_y, bh = Hd.bar_height;
-    chs.forEach((ch, k) => { const x = x0 + k * (sw + gap), f = k < ci ? 1 : k > ci ? 0 : L.clamp((T - ch.start) / (ch.end - ch.start));
-      L.fillRR(c, x, by - bh / 2, sw, bh, bh / 2, OV.dark ? 'rgba(255,255,255,0.18)' : 'rgba(110,97,120,0.16)'); if (f > 0) L.fillRR(c, x, by - bh / 2, Math.max(bh, sw * f), bh, bh / 2, k === ci ? P.water_dark : L.alpha(P.water_dark, 0.55)); });
-    const cur = chs[ci].node, ca = L.fin(T, chs[ci].start + 0.1, 0.4), cs = Hd.chapter_size;
-    c.save(); c.globalAlpha *= ca; c.font = fnt(cs, 'label'); const cw = c.measureText(cur).width + cs * 1.2, chh = Hd.chapter_chip_height;
-    if (Hd.chapter_chip) L.fillRR(c, W / 2 - cw / 2, Hd.chapter_y - chh / 2, cw, chh, chh / 2, OV.dark ? 'rgba(255,255,255,0.14)' : '#FFFFFF');
-    txt(c, cur, W / 2, Hd.chapter_y + 1, cs, OV.dark ? '#FFFFFF' : P.water_dark, Hd.chapter_chip ? null : (OV.dark ? 'rgba(10,12,40,0.9)' : '#FFFFFF'), 'label'); c.restore();
+    // 进度轨：一条细线贯穿全片，每章起点一个节点；走过的部分和节点是主题色，当前章的节点大一圈、中间留白
+    const x0 = Hd.bar_margin_x, x1 = W - Hd.bar_margin_x, by = Hd.bar_y, bh = Hd.bar_height, t0 = chs[0].start, tot = Math.max(0.1, chs[n - 1].end - t0), xa = (tt) => x0 + (x1 - x0) * L.clamp((tt - t0) / tot), r = Hd.node ?? 11;
+    const track = OV.dark ? 'rgba(255,255,255,0.22)' : `rgba(${th.shadow},0.16)`;
+    L.fillRR(c, x0, by - bh / 2, x1 - x0, bh, bh / 2, track); const xf = xa(T); if (xf > x0 + bh) L.fillRR(c, x0, by - bh / 2, xf - x0, bh, bh / 2, th.accent);
+    chs.forEach((ch, k) => { const x = Math.max(x0 + r, xa(ch.start));
+      if (k < ci) L.circle(c, x, by, r, th.accent);
+      else if (k === ci) { const e = L.backOut(L.clamp((T - ch.start) / 0.4)); L.circle(c, x, by, r + 5 * e, th.accent); L.circle(c, x, by, Math.max(0, (r - 5) * e), '#FFFFFF'); }
+      else { L.circle(c, x, by, r, '#FFFFFF'); L.ring(c, x, by, r - 1.5, 3, OV.dark ? 'rgba(255,255,255,0.5)' : `rgba(${th.shadow},0.28)`); } });
+    // 章节名：左对齐，“序号块 + 名字”；换章时从左滑入
+    const cur = chs[ci].node, ca = L.fin(T, chs[ci].start + 0.1, 0.4), cs = Hd.chapter_size, sq = Math.round(cs * 1.24), cx = Hd.chapter_x ?? 60, cy = Hd.chapter_y;
+    c.save(); c.globalAlpha *= ca; c.translate(-24 * (1 - L.easeOut(ca)), 0);
+    L.fillRR(c, cx, cy - sq / 2, sq, sq, Math.round(sq * 0.26), th.accent); txt(c, String(ci + 1), cx + sq / 2, cy + 2, Math.round(cs * 0.84), '#FFFFFF', null, 'title');
+    txt(c, cur, cx + sq + 18, cy + 2, cs, OV.dark ? '#FFFFFF' : th.ink, OV.dark ? 'rgba(10,12,40,0.9)' : '#FFFFFF', 'title', 'left', 0.16);
+    c.restore();
     c.restore();
   };
 
-  // ---------- 片名：只在正片开场前 title.until_seconds 秒出现在舞台内，然后上滑退场 ----------
+  // ---------- 片名：只在正片开场前 title.until_seconds 秒出现在舞台内——主题色横幅、白字，从上方落下，然后上滑退场 ----------
   OV.title = (c, SB, TL, T) => {
     const Lt = OV.LAYOUT, Tt = Lt.title; if (!Tt || Tt.enabled === false) return;   // 横屏：片名只在封面上，正片顶部是章节导航
     const AM = Lt.ai_mark, markEnd = AM && AM.text ? (AM.from || 0) + (AM.show_seconds || 0) : 0;
     const T0 = Math.max((TL.cover || 0) + 0.15, markEnd), T1 = Math.max((TL.cover || 0) + Tt.until_seconds, T0 + (Tt.min_seconds || 0)), main = SB.title_card && SB.title_card.main; if (!main) return;   // 片名等 AI 标识退场再入（两者都在左上/上方）
     const ain = L.fin(T, T0, Tt.fade_in), aout = 1 - L.seg(T, T1 - Tt.fade_out, T1), a = ain * aout; if (a <= 0.001) return;
-    const P = L.P; c.save(); c.globalAlpha *= a;
-    c.font = fnt(Tt.size, 'title'); const tsz = Math.min(Tt.size, Math.floor(Tt.size * Tt.max_width / c.measureText(main).width));
-    txt(c, main, W / 2, Tt.y + (1 - ain) * 30 - (1 - aout) * 60, tsz, OV.dark ? '#FFFFFF' : P.ink, OV.dark ? 'rgba(10,12,40,0.9)' : '#FFFFFF', 'title', 'center', 0.22);
+    const th = TH(), padX = Tt.pad_x ?? 44; c.save(); c.globalAlpha *= a;
+    c.font = fnt(Tt.size, 'title'); const tsz = Math.min(Tt.size, Math.floor(Tt.size * (Tt.max_width - 2 * padX) / c.measureText(main).width)); c.font = fnt(tsz, 'title');
+    const tw = c.measureText(main).width, bw = tw + 2 * padX, bh = Math.round(tsz * 1.56), y = Tt.y - (1 - L.easeOut(ain)) * 28 - (1 - aout) * 50, rr = Tt.radius ?? 20;
+    L.fillRR(c, W / 2 - bw / 2 + 5, y - bh / 2 + 8, bw, bh, rr, `rgba(${th.shadow},0.16)`); L.fillRR(c, W / 2 - bw / 2, y - bh / 2, bw, bh, rr, OV.dark ? '#FFFFFF' : th.accent);
+    txt(c, main, W / 2, y + 2, tsz, OV.dark ? th.ink : '#FFFFFF', null, 'title');
     c.restore();
   };
 
   // ---------- AI 生成标识（GB 45438—2025：起始画面显式标识，文字高 ≥ 画面最短边 5%，从第 0 帧起持续 ≥ 2 s；片尾另有 outro.ai_note）----------
-  // 移植自 bph/src/overlay.js OV.aiMark：按实测字形高度迭代放大字号到 ≥ ceil(短边×min_ratio)+margin_px；第 0 帧满不透明、不淡入，show_seconds 后 fade_out 秒淡出。
+  // 按实测字形高度迭代放大字号到 ≥ ceil(短边×min_ratio)+margin_px；第 0 帧满不透明、不淡入，show_seconds 后 fade_out 秒淡出。
   // 每帧写 OV.lastAiMark = { T, alpha, shown, size, ink, need, x, y, w, h }，frames.js / render.js 汇总进 overlay.json 的 ai_mark，qa.py 判定。
   OV.lastAiMark = null; OV._aiFont = null;
   OV.aiMark = (c, T, TL) => {
@@ -142,18 +160,19 @@ const OV = {};
     OV.lastAiMark = { T: Math.round(T * 1000) / 1000, alpha: Math.round(alpha * 1000) / 1000, shown: alpha >= 0.999, size: F.size, ink: Math.round(F.ink * 10) / 10, need, x, y, w: Math.round(bw), h: Math.round(bh) };
     if (alpha <= 0.001) return;
     c.save(); c.globalAlpha *= alpha;
-    L.fillRR(c, x + 5, y + 7, bw, bh, bh * 0.28, 'rgba(0,0,0,0.16)'); L.fillRR(c, x, y, bw, bh, bh * 0.28, 'rgba(40,32,52,0.86)');
-    txt(c, A.text, x + bw / 2, y + bh / 2 + F.size * 0.04, F.size, '#FFFFFF', null, 'label');
+    const th = TH(), ar = bh * 0.2;   // 白底、墨色描边、墨色字（压在任何画面上都看得清）
+    L.fillRR(c, x + 4, y + 6, bw, bh, ar, `rgba(${th.shadow},0.18)`); L.fillRR(c, x, y, bw, bh, ar, '#FFFFFF'); L.rr(c, x + 2, y + 2, bw - 4, bh - 4, Math.max(0, ar - 2)); c.lineWidth = 4; c.strokeStyle = th.ink; c.stroke();
+    txt(c, A.text, x + bw / 2, y + bh / 2 + F.size * 0.04, F.size, th.ink, null, 'label');
     c.restore();
   };
   OV.aiTag = OV.aiMark;   // 旧名兼容
 
-  // ---------- 要点字卡「贴纸胶囊」：自适应宽、圆角 = 半高、软投影、色点；big = 红底大标题胶囊常驻第 0 格；alert = 红点 + 红字 + 红描边 ----------
-  // 格位：固定槽位从上往下排（compact 以底边为锚向上堆）；最新一张色点饱和；超过上限时最老的淡出上移、其余上移一格；太长就缩字号，不截断（记 label_shrunk）。
+  // ---------- 要点字卡「标签卡」：自适应宽、小圆角、软投影、左侧一道主题色条；big = 深色底大标题卡常驻第 0 格；alert = 红底白字 + 白圆红叹号 ----------
+  // 格位：固定槽位从上往下排（compact 以底边为锚向上堆）；最新一张色条饱和；进场 = 从左滑入并淡入；超过上限时最老的淡出上移、其余上移一格；太长就缩字号，不截断（记 label_shrunk）。
   // 文字两档字重：第一个“（”或“：”之前是主词（700 墨色），之后是说明（secondary_weight，ink2）；big 不拆。
   const splitLabel = (s) => { const i = s.search(/[（：]/); return i > 0 ? [s.slice(0, i), s.slice(i)] : [s, '']; };
-  // ---------- 横屏要点板（layout.labels.style = "board"，bph 10-20 用户选定的 D 改良要点板） ----------
-  // 一块白板浮在右侧：板头 = 本场最近一张 big 卡（红底，术式名）或本场主题 scene.topic（蓝底；没写 topic 用章节名）；条目带色点，最新一条黄底高亮；
+  // ---------- 横屏要点板（layout.labels.style = "board"） ----------
+  // 一块白板浮在右侧：板头 = 本场最近一张 big 卡（主题深色底；危险信号红底）或本场主题 scene.topic（墨色底 + 主题色底线；没写 topic 用章节名）；条目前一个小方块，最新一条浅主题色底高亮；
   // 同屏格数 maxN = (scene.max_labels || max_default) + extra_rows，超过时旧条整体上移、最老淡出（与竖屏同一套进出节奏；timeline 的 card_stays 用 big_takes_slot=False 算停留）
   const chapName = () => { const TL = OV.TL, T = OV._T || 0; if (!TL || !TL.chapters || !TL.chapters.length) return ''; const chs = TL.chapters; let ci = chs.findIndex((ch) => T >= ch.start && T < ch.end); if (ci < 0) ci = chs.length - 1; return chs[ci].node; };
   const topicOf = (sc) => { const s = OV.SB && OV.SB.scenes ? OV.SB.scenes.find((q) => q.id === sc.id) : null; return (s && s.topic) || chapName(); };
@@ -165,7 +184,7 @@ const OV = {};
     return out;
   };
   const labelsBoard = (c, sc, t, Tabs) => {
-    const P = L.P, Lt = OV.LAYOUT, Lb = Lt.labels, T = Tabs == null ? (sc.start || 0) + t : Tabs; OV._T = T;
+    const th = TH(), Lt = OV.LAYOUT, Lb = Lt.labels, T = Tabs == null ? (sc.start || 0) + t : Tabs; OV._T = T;
     const maxN = (sc.max_labels || Lb.max_default || 3) + (Lb.extra_rows || 0), all = (sc.labels || []).filter((l) => t >= l.t).sort((a, b) => a.t - b.t); if (!all.length) return;
     const bigs = all.filter((l) => l.big), items = all.filter((l) => !l.big), lastBig = bigs[bigs.length - 1];
     const X = Lb.x, BW = Lb.width, HH = Lb.head_height || 82, ROW = Lb.row_height || 82, PAD = Lb.pad ?? 16, RAD = Lb.radius ?? 28, POP = Lb.pop || {}, SH = Lb.shadow || { alpha: 0.16, dx: 6, dy: 10 };
@@ -174,9 +193,9 @@ const OV = {};
     const ap = L.clamp((t - all[0].t) / (POP.board_seconds ?? 0.45)), s0 = L.lerp(0.94, 1, L.backOut(ap));
     const subTop = Lt.subtitle.y - Lt.subtitle.size * 0.5; if (ap > 0.05 && TOP + BH > subTop) flag('label_over_subtitle', T, { scene: sc.id, text: '要点板', bottom: Math.round(TOP + BH), subtitle_top: Math.round(subTop) });
     c.save(); c.globalAlpha *= L.clamp(ap * 1.6); c.translate(X + BW / 2, TOP); c.scale(s0, s0); c.translate(-(X + BW / 2), -TOP);
-    L.fillRR(c, X + (SH.dx ?? 6), TOP + (SH.dy ?? 10), BW, BH, RAD, `rgba(59,47,74,${SH.alpha ?? 0.16})`); L.fillRR(c, X, TOP, BW, BH, RAD, OV.dark ? 'rgba(26,30,70,0.96)' : 'rgba(255,255,255,0.97)');
+    L.fillRR(c, X + (SH.dx ?? 6), TOP + (SH.dy ?? 10), BW, BH, RAD, `rgba(${th.shadow},${SH.alpha ?? 0.16})`); L.fillRR(c, X, TOP, BW, BH, RAD, OV.dark ? 'rgba(26,30,70,0.96)' : 'rgba(255,255,255,0.97)');
     c.save(); L.rr(c, X, TOP, BW, BH, RAD); c.clip();
-    const hc = lastBig ? P.red : P.water_dark; c.fillStyle = hc; c.fillRect(X, TOP, BW, HH);
+    const hc = lastBig ? (lastBig.alert ? th.alert : th.accent_dark) : th.ink; c.fillStyle = hc; c.fillRect(X, TOP, BW, HH); if (!lastBig) { c.fillStyle = th.accent; c.fillRect(X, TOP + HH - 7, BW, 7); }   // 板头：本场主题 = 墨色底 + 主题色底线；big 卡 = 主题深色底；危险信号的 big 卡 = 红底
     const head = lastBig ? lastBig.text.replace(/·/g, '•') : (Lb.topic_head === false ? chapName() : topicOf(sc)), ha = lastBig ? L.fin(t, lastBig.t, 0.4) : 1, HX = Lb.head_x ?? 34, HS = Lb.head_size || 42;
     const hs = fitSize(c, head, HS, 'title', BW - 2 * HX); if (hs < HS) flag('label_shrunk', T, { scene: sc.id, text: head, size: hs, size0: HS });
     c.globalAlpha *= ha; txtA(c, head, X + HX, TOP + HH / 2 + 2, hs, '#FFFFFF', 'title', 'left'); c.globalAlpha /= Math.max(ha, 1e-3);
@@ -184,23 +203,23 @@ const OV = {};
     for (const o of slotsOf(items, maxN, t, POP)) {
       const l = o.l, y = TOP + HH + PAD + o.slot * ROW, e = L.easeOut(o.p); if (e <= 0) continue;
       c.save(); c.globalAlpha *= e * o.fade; c.translate((1 - e) * (POP.slide ?? 26), 0);
-      if (o.newest) { const hl = 1 - L.seg(t, l.t + hi - 0.8, l.t + hi); L.fillRR(c, X + 14, y + 6, BW - 28, ROW - 12, 14, `rgba(255,232,150,${0.55 * hl})`); }
-      if (o.slot > 0.05) { c.fillStyle = OV.dark ? 'rgba(255,255,255,0.10)' : 'rgba(59,47,74,0.08)'; c.fillRect(X + 30, y, BW - 60, 2); }
-      L.circle(c, X + (Lb.dot_x ?? 44), y + ROW / 2, Lb.dot ?? 9, l.alert ? P.red : P.water_dark);
+      if (o.newest) { const hl = 1 - L.seg(t, l.t + hi - 0.8, l.t + hi); c.save(); c.globalAlpha *= hl; L.fillRR(c, X + 14, y + 6, BW - 28, ROW - 12, 12, l.alert ? th.alert_soft : th.accent_soft); c.restore(); }
+      if (o.slot > 0.05) { c.fillStyle = OV.dark ? 'rgba(255,255,255,0.10)' : `rgba(${th.shadow},0.08)`; c.fillRect(X + 30, y, BW - 60, 2); }
+      { const d = (Lb.dot ?? 9) * 1.9; L.fillRR(c, X + (Lb.dot_x ?? 44) - d / 2, y + ROW / 2 - d / 2, d, d, d * 0.3, l.alert ? th.alert : th.accent); }
       const sz = fitSize(c, l.text, SZ, 'label', TW); if (sz < SZ && e * o.fade > 0.05) flag('label_shrunk', T, { scene: sc.id, text: l.text, size: sz, size0: SZ });
-      txtA(c, l.text, X + TX, y + ROW / 2 + 2, sz, OV.dark ? '#FFFFFF' : (l.alert ? P.red_dark : P.ink), 'label', 'left');
+      txtA(c, l.text, X + TX, y + ROW / 2 + 2, sz, OV.dark ? '#FFFFFF' : (l.alert ? th.alert_dark : th.ink), 'label', 'left');
       c.restore();
     }
     c.restore(); c.restore();
   };
   OV.labels = (c, sc, t, Tabs) => {
     if ((OV.LAYOUT.labels || {}).style === 'board') return labelsBoard(c, sc, t, Tabs);
-    const P = L.P, Lt = OV.LAYOUT, Lb = Lt.labels, maxN = Math.min(sc.max_labels || Lb.max_default, Lb.max_on_screen || Infinity), X0 = Lb.x, MAXW = Lb.width, T = Tabs == null ? (sc.start || 0) + t : Tabs;   // 同屏上限 max_on_screen（方案二：3）
+    const th = TH(), Lt = OV.LAYOUT, Lb = Lt.labels, maxN = Math.min(sc.max_labels || Lb.max_default, Lb.max_on_screen || Infinity), X0 = Lb.x, MAXW = Lb.width, T = Tabs == null ? (sc.start || 0) + t : Tabs;   // 同屏上限 max_on_screen
     const all = (sc.labels || []).filter((l) => t >= l.t).sort((a, b) => a.t - b.t); if (!all.length) return;
     const compact = maxN > Lb.max_default, Cp = Lb.compact, H = compact ? Cp.row_height : Lb.row_height, GAP = compact ? Cp.gap : Lb.gap, sizeN = compact ? Cp.size : Lb.size, DOT = compact ? (Cp.dot || Lb.dot) : Lb.dot, bigSize = compact ? (Cp.big_size || Lb.big_size) : Lb.big_size;
     const GAPe = compact || maxN < 2 ? GAP : Math.min(GAP, (Lb.band[1] - Lb.band[0] - maxN * H) / (maxN - 1));   // 普通模式：行距最多压到让 maxN 行正好填满字卡区（方案二 1300–1452 放 2×70 时行距 14→12）
     const colTop = compact ? Lb.band[1] - maxN * (H + GAP) + GAP : Lb.band[0];   // compact：以底边为锚向上堆，永远不越过 band[1]
-    const subTop = Lt.subtitle.y - Lt.subtitle.size * 0.5;   // 字幕字框顶边（em box；描边再往上几像素不算）
+    const subTop = Lt.subtitle.y - Lt.subtitle.size * (Lt.subtitle.bar_height ?? 1.52) / 2;   // 字幕条顶边
     const D = 0.3, ease = (x) => L.easeInOut(L.clamp(x)), POP = Lb.pop || { seconds: 0.4, text_fade: 0.25, leave_rise: 12 }, R = Lb.radius === 'half' || Lb.radius == null ? H / 2 : +Lb.radius, SH = Lb.shadow || { alpha: 0.14, dy: 10, blur: 18 };
     const bigs = all.filter((l) => l.big), big = bigs.length ? bigs[bigs.length - 1] : null, prevBig = bigs.length > 1 ? bigs[bigs.length - 2] : null;
     const baseF = big ? ease((t - big.t) / D) : 0, cap = maxN - (big ? 1 : 0);   // big 占第 0 格：普通卡从第 1 格起（下推进度 baseF），可用格数 cap
@@ -210,11 +229,11 @@ const OV = {};
     const sumE = norm.reduce((s, l) => s + ease((t - l.t) / D), 0), shPre = Math.max(0, sumE - maxN), shPost = Math.max(0, sumE - cap), sh = shPre + (shPost - shPre) * baseF;
     const bigDelay = big && (norm.filter((l) => l.t <= big.t).length >= maxN || prevBig) ? 0.22 : 0;
     const used = new Map();
-    const dark = OV.dark, inkMain = dark ? '#FFFFFF' : P.ink, inkSec = dark ? 'rgba(255,255,255,0.75)' : P.ink2, cardFill = dark ? 'rgba(22,26,64,0.92)' : '#FFFFFF';
-    // 一张卡：row 是它的格位（可为分数，淘汰中为负），q 是弹入进度（0..1 含过冲），fade 是淘汰淡出，newest 决定色点饱和
+    const dark = OV.dark, inkMain = dark ? '#FFFFFF' : th.ink, inkSec = dark ? 'rgba(255,255,255,0.75)' : th.ink2, cardFill = dark ? 'rgba(22,26,64,0.92)' : th.card, BAR = Lb.bar ?? 12;
+    // 一张卡：row 是它的格位（可为分数，淘汰中为负），q 是进场进度（0..1），fade 是淘汰淡出，newest 决定色条饱和
     const draw = (l, row, q, fade, newest, leaveP) => {
       const [main, sec] = l.big ? [l.text.replace(/·/g, '•'), ''] : splitLabel(l.text);
-      const size0 = l.big ? bigSize : sizeN, fontM = l.big ? 'title' : 'label', pads = l.big ? 2 * Lb.big_pad : Lb.pad_l + DOT + Lb.dot_gap + Lb.pad_r;
+      const size0 = l.big ? bigSize : sizeN, fontM = l.big ? 'title' : 'label', ICON = l.alert && !l.big ? DOT + Lb.dot_gap : 0, pads = l.big ? 2 * Lb.big_pad : BAR + Lb.pad_l + ICON + Lb.pad_r;   // 普通卡：色条 + 左留白 +（危险信号的叹号）+ 文字 + 右留白
       const mw = (sz) => measureA(c, main, sz, fontM) + (sec ? measureA(c, sec, sz, 'label2') : 0);
       const m0 = mw(size0), size = m0 + pads > MAXW ? Math.floor(size0 * (MAXW - pads) / m0) : size0, w = Math.min(MAXW, mw(size) + pads);
       const X = Lb.align === 'center' ? Math.max(X0, Math.min(Lb.center_x ?? (Lt.width || 1080) / 2, ((Lt.safe || {}).right_x ?? 1e9) - w / 2) - w / 2) : X0;   // align=center：每张卡按自身宽度居中，右缘过 safe.right_x 才往左让（10-23 用户：字卡字幕偏左）
@@ -227,18 +246,19 @@ const OV = {};
         if (yRow + H > subTop) flag('label_over_subtitle', T, { scene: sc.id, text: l.text, bottom: Math.round(yRow + H), subtitle_top: Math.round(subTop) });
         if (X + w > Lt.safe.right_x && inSafeY(yRow, yRow + H)) flag('safe_right', T, { scene: sc.id, kind: 'label', right: X + w, text: l.text }); }
       if (alpha <= 0.001) return;
-      // 弹入：胶囊从色点（直径 DOT 的圆）展开到全宽全高（以色点为锚向右长），文字在后 text_fade 秒淡入
-      const cx = X + (l.big ? Lb.big_pad : Lb.pad_l), e = L.backOut(p), x0 = L.lerp(cx - DOT / 2, X, e), x1 = L.lerp(cx + DOT / 2, X + w, e), hh = L.lerp(DOT, H, e), yy = yRow + (H - hh) / 2, rr = Math.min(R, hh / 2);
-      const tA = L.clamp((q * POP.seconds - (POP.seconds - POP.text_fade)) / POP.text_fade);   // q 按 seconds 归一：最后 text_fade 秒文字淡入
-      c.save(); c.globalAlpha *= fade;
-      c.save(); c.shadowColor = `rgba(59,47,74,${SH.alpha})`; c.shadowBlur = SH.blur * 2; c.shadowOffsetY = SH.dy;   // Canvas 的 shadowBlur ≈ 2σ，PIL GaussianBlur(r) 的 σ = r
-      L.fillRR(c, x0, yy, x1 - x0, hh, rr, l.big ? P.red : cardFill); c.restore();
-      if (l.alert && Lb.alert_ring) { const k = Lb.alert_ring / 2; L.rr(c, x0 + k, yy + k, x1 - x0 - 2 * k, hh - 2 * k, Math.max(0, rr - k)); c.lineWidth = Lb.alert_ring; c.strokeStyle = P.red; c.stroke(); }   // 描边画在卡内侧（与 PIL outline 一致）
-      if (!l.big) { const dc = l.alert ? P.red : newest ? P.water_dark : L.alpha(P.water_dark, Lb.dot_dim_alpha ?? 0.6); L.circle(c, cx, yRow + H / 2, DOT / 2, dc); }
-      if (tA > 0) { c.globalAlpha *= tA; const ty = yRow + H / 2 + (l.big ? 0 : 1);
-        if (l.big) txtA(c, main, X + Lb.big_pad, ty, size, '#FFFFFF', 'title', 'left');
-        else { const tx = cx + DOT / 2 + Lb.dot_gap, colM = l.alert ? P.red_dark : inkMain, colS = l.alert ? P.red_dark : inkSec;
-          txtA(c, main, tx, ty, size, colM, 'label', 'left'); if (sec) txtA(c, sec, tx + measureA(c, main, size, 'label'), ty, size, colS, 'label2', 'left'); } }
+      // 进场：整张卡从左边滑入并淡入
+      const e = L.easeOut(p), rr = Math.min(R, H / 2);
+      c.save(); c.globalAlpha *= fade * L.clamp(p * 1.6); c.translate(-44 * (1 - e), 0);
+      c.save(); c.shadowColor = `rgba(${th.shadow},${SH.alpha})`; c.shadowBlur = SH.blur * 2; c.shadowOffsetY = SH.dy;   // Canvas 的 shadowBlur ≈ 2σ
+      L.fillRR(c, X, yRow, w, H, rr, l.alert ? th.alert : l.big ? th.ink : cardFill); c.restore();   // 危险信号：整张红底白字，压在什么底色上都醒目
+      if (l.alert && Lb.alert_ring) { const k = Lb.alert_ring / 2; L.rr(c, X + k, yRow + k, w - 2 * k, H - 2 * k, Math.max(0, rr - k)); c.lineWidth = Lb.alert_ring; c.strokeStyle = th.alert; c.stroke(); }
+      const ty = yRow + H / 2 + 1;
+      if (l.big) txtA(c, main, X + Lb.big_pad, ty, size, '#FFFFFF', 'title', 'left');
+      else {
+        c.save(); L.rr(c, X, yRow, w, H, rr); c.clip(); c.fillStyle = l.alert ? th.alert_dark : newest ? th.accent : L.alpha(th.accent, Lb.dot_dim_alpha ?? 0.55); c.fillRect(X, yRow, BAR, H); c.restore();   // 左侧色条（裁在卡的圆角里）
+        if (l.alert) { const ix = X + BAR + Lb.pad_l + DOT / 2, iy = yRow + H / 2, r0 = DOT / 2; L.circle(c, ix, iy, r0, '#FFFFFF'); L.line(c, [[ix, iy - r0 * 0.52], [ix, iy + r0 * 0.1]], r0 * 0.32, th.alert); L.circle(c, ix, iy + r0 * 0.52, r0 * 0.18, th.alert); }   // 危险信号：白圆里一个红色叹号（图形）
+        const tx = X + BAR + Lb.pad_l + ICON, colM = l.alert ? '#FFFFFF' : inkMain, colS = l.alert ? '#FFFFFF' : inkSec;
+        txtA(c, main, tx, ty, size, colM, 'label', 'left'); if (sec) txtA(c, sec, tx + measureA(c, main, size, 'label'), ty, size, colS, 'label2', 'left'); }
       c.restore();
     };
     const popQ = (l, delay) => (t - l.t - delay) / POP.seconds;
@@ -252,9 +272,9 @@ const OV = {};
     if (big) draw(big, 0, popQ(big, bigDelay), 1, t - big.t < Lb.newest_highlight_seconds, 0);
   };
 
-  // ---------- 字幕：块在首字开口前 lead 秒出现，到下一块开口时切换；停顿 >0.6 s 则在末字后 tail 秒隐去。角色台词：名牌放在同一行左侧 ----------
+  // ---------- 字幕条：深色半透明圆角条 + 白字；块在首字开口前 lead 秒出现，到下一块开口时切换；停顿 >0.6 s 则在末字后 tail 秒隐去。角色台词：名牌是搭在字幕条左上角的一块小标签（角色色）----------
   OV.subtitle = (c, sc, t, Tabs) => {
-    const P = L.P, Lt = OV.LAYOUT, Sb = Lt.subtitle, T = Tabs == null ? (sc.start || 0) + t : Tabs;
+    const th = TH(), Lt = OV.LAYOUT, Sb = Lt.subtitle, T = Tabs == null ? (sc.start || 0) + t : Tabs;
     for (let li = 0; li < sc.lines.length; li++) {
       const ln = sc.lines[li], cs = ln.chunks || []; if (!cs.length) continue;
       // subtitle.yield_next（10-24 起模板版式打开；不写 = 旧画法）：句末块的停留按“下一句首块出现”截住，规则同句内换块——上一句的 tail 0.3 s 不再压住下一句首块
@@ -269,15 +289,16 @@ const OV = {};
         if (t >= a && t < hold) cur = cs[k];
       }
       if (!cur) return;
-      const s = cur.text.replace(/[。]$/, ''), who = OV.CH[ln.who], S0 = Sb.size, y = Sb.y, NS = Sb.name_size, CX = Sb.center_x;
-      c.font = fnt(NS); const bw = who ? c.measureText(who[0]).width + 34 : 0, bg = who ? 18 : 0;
-      c.font = fnt(S0); const tw0 = c.measureText(s).width, size = Math.min(S0, Math.floor(S0 * (Sb.max_width - bw - bg) / tw0)); c.font = fnt(size); const tw = c.measureText(s).width;
-      const tot = bw + bg + tw, x0 = Math.min(CX - tot / 2, ((Lt.safe || {}).right_x ?? 1e9) - tot), right = x0 + tot;   // 居中；右缘过 safe.right_x 才往左让
+      const s = cur.text.replace(/[。]$/, ''), who = OV.CH[ln.who], S0 = Sb.size, y = Sb.y, NS = Sb.name_size, CX = Sb.center_x, PAD = Sb.bar_pad ?? 32;
+      c.font = fnt(S0); const tw0 = c.measureText(s).width, size = Math.min(S0, Math.floor(S0 * (Sb.max_width - 2 * PAD) / tw0)); c.font = fnt(size); const tw = c.measureText(s).width;
+      const tot = tw + 2 * PAD, bh = Math.round(S0 * (Sb.bar_height ?? 1.52)), x0 = Math.min(CX - tot / 2, ((Lt.safe || {}).right_x ?? 1e9) - tot), right = x0 + tot;   // 居中；右缘过 safe.right_x 才往左让
       // ---- 自检 ----
       if (size < S0) flag('subtitle_shrunk', T, { scene: sc.id, text: s, size, size0: S0 });
-      if (right > Lt.safe.right_x && inSafeY(y - S0 / 2, y + S0 / 2)) flag('safe_right', T, { scene: sc.id, kind: 'subtitle', right: Math.round(right), text: s });
-      if (who) { L.fillRR(c, x0, y - NS * 0.72, bw, NS * 1.44, NS * 0.72, who[1]); txt(c, who[0], x0 + bw / 2, y + 1, NS, '#FFFFFF', null); txt(c, s, x0 + bw + bg, y, size, '#FFFFFF', who[1], 'sub', 'left', Sb.stroke); }
-      else txt(c, s, x0 + tw / 2, y, size, '#FFFFFF', P.ink, 'sub', 'center', Sb.stroke);
+      if (right > Lt.safe.right_x && inSafeY(y - bh / 2, y + bh / 2)) flag('safe_right', T, { scene: sc.id, kind: 'subtitle', right: Math.round(right), text: s });
+      L.fillRR(c, x0, y - bh / 2, tot, bh, Sb.bar_radius ?? 22, th.sub_bg);
+      txt(c, s, x0 + tot / 2, y + 2, size, th.sub_text, null, 'sub');
+      if (who) { c.font = fnt(NS, 'label'); const nw = c.measureText(who[0]).width + 30, nh = Math.round(NS * 1.5), nx = x0 + 20, ny = y - bh / 2 - Math.round(nh * 0.62);
+        L.fillRR(c, nx, ny, nw, nh, 12, who[1]); txt(c, who[0], nx + nw / 2, ny + nh / 2 + 1, NS, '#FFFFFF', null, 'label'); }
       return;
     }
   };
@@ -287,7 +308,8 @@ const OV = {};
   OV.credits = (SB) => (SB.credits || []).filter((cr) => !(cr && typeof cr === 'object' && cr.orient) || cr.orient === (OV.LAYOUT && OV.LAYOUT.orient === 'land' ? 'land' : 'port'));
   // 横屏：center_x 在右半幅、fit 让免责声明/AI 说明按 max_width 缩字号、credit_line 行距；有参考文献页（sref）时片尾不再重复 outro.references 短清单
   OV.outro = (c, SB, t) => {
-    const P = L.P, O = OV.LAYOUT.outro, a = L.fin(t, 0.2, 0.6), ink = OV.dark ? '#FFFFFF' : P.ink, ink2 = OV.dark ? 'rgba(255,255,255,0.75)' : P.ink2, ou = SB.outro || {};
+    const th = TH(), O = OV.LAYOUT.outro, a = L.fin(t, 0.2, 0.6), ink = OV.dark ? '#FFFFFF' : th.ink, ink2 = OV.dark ? 'rgba(255,255,255,0.75)' : th.ink2, ou = SB.outro || {};
+    const slogan = (s, size) => { txt(c, s, 0, 0, size, OV.dark ? '#FFFFFF' : th.accent_dark, null, 'title'); L.fillRR(c, -44, Math.round(size * 0.78), 88, 8, 4, th.accent); };   // 口号：主题深色字，下面一道短横线
     const CX = O.center_x ?? W / 2, fit = (s, size, font) => (O.fit ? fitSize(c, s, size, font, O.max_width) : size);
     // 自检（10-24）：片尾每行右缘在 safe.y_from–y_to 段内越过 safe.right_x 记 safe_right、字底进 bottom_reserved 记 safe_bottom（nocturia 报告口号 / 文献右端到 960–1030 px，foam 署名进了底部留白带）。只量不画，旧版式画面逐位不变
     const Lt = OV.LAYOUT, RX = (Lt.safe || {}).right_x ?? 1e9, BOT = (Lt.bottom_reserved || [HGT])[0], s99 = OV.TL && (OV.TL.scenes || []).find((s) => s.id === 's99'), T = (s99 ? s99.start : 0) + t;
@@ -295,8 +317,8 @@ const OV = {};
     const chk = (s, x, y, size, role, stroke) => { const w = meas(s, size, role, stroke);
       if (x + w / 2 > RX + 0.5 && inSafeY(y - size / 2, y + size / 2)) flag('safe_right', T, { scene: 's99', kind: 'outro', right: Math.round(x + w / 2), text: s });
       if (y + size * 0.6 > BOT) flag('safe_bottom', T, { scene: 's99', kind: 'outro', bottom: Math.round(y + size * 0.6), text: s }); };
-    if (O.safe) return outroSafe(c, SB, t, { O, a, ink, ink2, ou, CX, RX, BOT, meas, chk });
-    if (ou.slogan) L.with(c, () => { c.font = fnt(O.slogan_size, 'title'); const sz = Math.min(O.slogan_size, Math.floor(O.slogan_size * O.max_width / c.measureText(ou.slogan).width)); txt(c, ou.slogan, 0, 0, sz, ink, OV.dark ? 'rgba(10,12,40,0.9)' : '#FFFFFF', 'title'); chk(ou.slogan, CX, O.slogan_y, sz, 'title', true); }, { x: CX, y: O.slogan_y, a });
+    if (O.safe) return outroSafe(c, SB, t, { O, a, ink, ink2, ou, CX, RX, BOT, meas, chk, slogan });
+    if (ou.slogan) L.with(c, () => { c.font = fnt(O.slogan_size, 'title'); const sz = Math.min(O.slogan_size, Math.floor(O.slogan_size * O.max_width / c.measureText(ou.slogan).width)); slogan(ou.slogan, sz); chk(ou.slogan, CX, O.slogan_y, sz, 'title', true); }, { x: CX, y: O.slogan_y, a });
     const b = L.fin(t, 0.7, 0.6);
     L.with(c, () => {
       let yy = 0;
@@ -312,7 +334,7 @@ const OV = {};
   //   居中在 center_x，在 safe.y_from–y_to 段内右缘过 safe.right_x 才往左让、让到 margin_x（缺省 (画宽 − max_width)/2）还放不下才缩字号——与字卡 / 字幕同一规则（10-23 用户定“居中、只有右缘过 900 的才往左让”）；
   //   口号单独算；下面那一块（免责声明 / AI 说明 / 文献 / 署名）按最宽一行整块共用一个中心（逐行各让各的会参差不齐）；
   //   这一块的字底不进 bottom_reserved：超了先整块上移（不压口号，留 gap），还超就把文献与署名的字号、行距一起按比例收（最小 0.75），仍超照画并记 safe_bottom
-  const outroSafe = (c, SB, t, { O, a, ink, ink2, ou, CX, RX, BOT, meas, chk }) => {
+  const outroSafe = (c, SB, t, { O, a, ink, ink2, ou, CX, RX, BOT, meas, chk, slogan }) => {
     const LM = O.margin_x ?? Math.max(0, (W - O.max_width) / 2);
     const fitW = (s, size, role, y, stroke) => {   // → { size, w, inS }：段内宽度上限 min(max_width, right_x − LM)，段外 max_width
       const inS = inSafeY(y - size / 2, y + size / 2), lim = Math.min(O.max_width, inS ? RX - LM : W - 2 * LM); let w = meas(s, size, role, stroke);
@@ -335,7 +357,7 @@ const OV = {};
       if (lift > 0) { sy -= lift; y0 -= lift; ls = lay(y0, kk); }
       while (bottom(ls) > lim && kk > 0.75) { kk -= 0.01; ls = lay(y0, kk); }
     }
-    if (ou.slogan) { const f = fitW(ou.slogan, O.slogan_size, 'title', sy, true), x = center(f.w, f.inS); L.with(c, () => txt(c, ou.slogan, 0, 0, f.size, ink, OV.dark ? 'rgba(10,12,40,0.9)' : '#FFFFFF', 'title'), { x, y: sy, a }); chk(ou.slogan, x, sy, f.size, 'title', true); }
+    if (ou.slogan) { const f = fitW(ou.slogan, O.slogan_size, 'title', sy, true), x = center(f.w, f.inS); L.with(c, () => slogan(ou.slogan, f.size), { x, y: sy, a }); chk(ou.slogan, x, sy, f.size, 'title', true); }
     const b = L.fin(t, 0.7, 0.6), fs = ls.map((it) => fitW(it.s, it.size, it.role, it.y)), inS = fs.some((f) => f.inS), xb = center(Math.max(0, ...fs.map((f) => f.w)), inS);
     ls.forEach((it, i) => { L.with(c, () => txt(c, it.s, 0, 0, fs[i].size, it.col, null, it.role), { x: xb, y: it.y, a: b }); chk(it.s, xb, it.y, fs[i].size, it.role); });
   };
@@ -367,11 +389,11 @@ const OV = {};
     return refCache;
   };
   OV.refs = (c, SB, t) => {
-    const P = L.P, Rf = OV.LAYOUT.refs || {}, Lo = refLayout(c, SB), TLr = (OV.TL && OV.TL.refs) || {}, sec = TLr.page_seconds || SB.references_page_seconds || Rf.page_seconds_default || 5, np = Lo.pages.length; if (!np) return;
+    const th = TH(), Rf = OV.LAYOUT.refs || {}, Lo = refLayout(c, SB), TLr = (OV.TL && OV.TL.refs) || {}, sec = TLr.page_seconds || SB.references_page_seconds || Rf.page_seconds_default || 5, np = Lo.pages.length; if (!np) return;
     const pg = Math.min(np - 1, Math.floor(t / sec)), a = L.fin(t, 0, Rf.fade_in ?? 0.5), pa = pg > 0 ? L.fin(t, pg * sec, Rf.page_fade ?? 0.35) : 1;
-    c.save(); c.globalAlpha *= a; c.fillStyle = OV.dark ? '#14183A' : (Rf.bg || '#FFF8EE'); c.fillRect(0, 0, W, HGT);
-    txt(c, `参考文献（${pg + 1}/${np}）`, Rf.title_x ?? 90, Rf.title_y ?? 96, Rf.title_size ?? 46, OV.dark ? '#FFFFFF' : P.ink, null, 'title', 'left');
-    c.globalAlpha *= pa; let y = Lo.top; c.font = fnt(Lo.size, 'ref'); c.textBaseline = 'top'; c.textAlign = 'left'; c.fillStyle = OV.dark ? 'rgba(255,255,255,0.9)' : P.ink;
+    c.save(); c.globalAlpha *= a; c.fillStyle = OV.dark ? '#14183A' : (Rf.bg || `rgb(${th.paper})`); c.fillRect(0, 0, W, HGT); c.fillStyle = th.accent; c.fillRect(Rf.title_x ?? 90, (Rf.title_y ?? 96) + (Rf.title_size ?? 46) * 0.72, 96, 8);
+    txt(c, `参考文献（${pg + 1}/${np}）`, Rf.title_x ?? 90, Rf.title_y ?? 96, Rf.title_size ?? 46, OV.dark ? '#FFFFFF' : th.ink, null, 'title', 'left');
+    c.globalAlpha *= pa; let y = Lo.top; c.font = fnt(Lo.size, 'ref'); c.textBaseline = 'top'; c.textAlign = 'left'; c.fillStyle = OV.dark ? 'rgba(255,255,255,0.9)' : th.ink;
     for (const it of Lo.pages[pg]) { c.fillText(it.tag, Lo.x0, y); it.lines.forEach((ln, i) => c.fillText(ln, Lo.x0 + it.ind, y + i * Lo.lh)); y += it.h; }
     c.restore();
   };

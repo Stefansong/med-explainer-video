@@ -81,7 +81,7 @@ else: warn('timeline.json 没有 card_stays（旧版 timeline.py）')
 
 # ---------- 舞台换镜暗谷（tools/dipscan.py）：场内换镜新旧镜头同时半透明 → 透出底色变灰；nocturia 正式版 v1 五处是成片审核员抓到的，之前的 QA 门查不出 ----------
 # 换镜处的暗谷判失败：观众看得见的穿帮，nocturia v1 和第一集 bph 正式版（189.63、388.57 s 两处）都是带着它交付的；psa、foam、nocturia v2、foam_3d 预演零误报，nocturia v1 六处全中。
-# 镜头内的明暗变化（前后画面相同：警示灯一闪一闪、亮的解剖圆窗滑出画面再滑回——torsion 201.37 s、关灯）和场景水浪转场窗口里的变暗（不透明转场不会透底：bph 3.13 s 片名淡入、381.30 s 夜到天亮）多半有意，只警告；都可在 storyboard.qa.dips_ok 声明消掉；
+# 镜头内的明暗变化（前后画面相同：警示灯一闪一闪、亮的解剖圆窗滑出画面再滑回——torsion 201.37 s、关灯）和场景转场窗口里的变暗（不透明转场不会透底：bph 3.13 s 片名淡入、381.30 s 夜到天亮）多半有意，只警告；都可在 storyboard.qa.dips_ok 声明消掉；
 # 预演阶段的 qa 不带 --gate，只记进 failures 给渲染前审核员看，早发现早改（正式版重渲 + 复审要 30–60 min）。layout.qa_gate.stage_dip：数字 = 允许处数（缺省 0）、"warn" = 只警告、null = 只记录。
 import dipscan
 try: ds = dipscan.scan(mp4, LAYOUT, TL, SB)
@@ -94,7 +94,7 @@ else:
     msg = f"舞台区换镜暗谷 {len(bad_d)} 处（新旧镜头同时半透明、透出底色变灰）：{fmt(bad_d)} → 场内换镜改成新镜头盖在不透明的旧镜头上只淡入；有意的暗场写进 storyboard.qa.dips_ok（带 why）"
     if bad_d and gate_d == 'warn': warn(msg)
     elif bad_d and gate_d is not None and len(bad_d) > int(gate_d): fail(msg)
-    if soft_d and gate_d is not None: warn(f"舞台区镜头内 / 转场窗口内变暗 {len(soft_d)} 处（前后是同一画面：闪烁、亮的东西移出画面、关灯；或落在场景水浪转场窗口里：暗场开头渐亮、片名淡入，多半有意）：{fmt(soft_d)} → 看一眼；有意的写进 storyboard.qa.dips_ok 消掉这条警告")
+    if soft_d and gate_d is not None: warn(f"舞台区镜头内 / 转场窗口内变暗 {len(soft_d)} 处（前后是同一画面：闪烁、亮的东西移出画面、关灯；或落在场景转场窗口里：暗场开头渐亮、片名淡入，多半有意）：{fmt(soft_d)} → 看一眼；有意的写进 storyboard.qa.dips_ok 消掉这条警告")
 
 # ---------- 叠字层渲染期自检 ----------
 ovf = RD / f'{project}_{tag}.overlay.json'

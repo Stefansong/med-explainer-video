@@ -215,21 +215,21 @@
  },
  "subtitle_numbers": [],
  "style": {
-  "name": "扁平元素风（暖色纸底）",
+  "name": "技能默认模板 · 薄荷",
   "palette": {
-   "paper": "#FFF4E2",
-   "paper2": "#FFE7C7",
-   "ink": "#3B2F4A",
-   "ink2": "#6E6178",
-   "white": "#FFFDF8",
+   "paper": "#F4F8F6",
+   "paper2": "#DFECE6",
+   "ink": "#1F2A44",
+   "ink2": "#5B6785",
+   "white": "#FFFFFF",
    "night": "#2E3558",
    "night2": "#3D4772",
    "moon": "#FFE9A8",
-   "red": "#F0605D",
-   "red_dark": "#C83C3A",
+   "red": "#E5484D",
+   "red_dark": "#B4232A",
    "water": "#7CC8E8",
    "water_dark": "#3E9BC6",
-   "stone": "#D9B98F",
+   "stone": "#C4D3CC",
    "skin": "#F6D3B5",
    "pants": "#4B5570",
    "urine": "#FFE07A",
@@ -238,8 +238,16 @@
    "yellow": "#FFD45E",
    "grey": "#B8B2BC",
    "steam_blue": "#CFEFFF",
-   "laser": "#FF5A36"
-  }
+   "laser": "#FF5A36",
+   "home": "#EEF2F6",
+   "home2": "#DDE6EE",
+   "home_floor": "#C8D3DD",
+   "clinic": "#F1F5FB",
+   "clinic2": "#DEE8F5",
+   "clinic_floor": "#C6D3E6",
+   "clinic_line": "#9FB6DA"
+  },
+  "theme": "mint"
  },
  "voices": {
   "_comment": "配音由用户自己录（tools/voice.py）：actor = 谁来配；desc = 嗓音和语气要求（写进台词本）",
@@ -271,7 +279,7 @@
  },
  "audio": {
   "bgm": {
-   "bpm": 104,
+   "bpm": 92,
    "minor": [],
    "quiet": []
   },

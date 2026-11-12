@@ -1,0 +1,111 @@
+{
+ "_comment": "主题预设：pipeline.py new <专题> --theme <名字>（或 pipeline.py theme <专题> <名字>）把 theme 写进专题的 layout.json / layout_land.json，把 palette 合并进 storyboard.style.palette。也可以直接改专题 layout.json 的 theme 自己配色。theme = 叠字层颜色（章节、字卡、字幕条、片名、转场）；palette = 画面层底色（纸面、家、诊室、地面）。",
+ "mint": {
+  "label": "薄荷（默认）：冷白底、翠绿主色、深蓝字",
+  "theme": {
+   "name": "mint",
+   "accent": "#0FA573",
+   "accent_dark": "#0B7F5A",
+   "accent_soft": "#DDF3EA",
+   "ink": "#1F2A44",
+   "ink2": "#5B6785",
+   "alert": "#E5484D",
+   "alert_dark": "#B4232A",
+   "alert_soft": "#FDECEC",
+   "card": "#FFFFFF",
+   "sub_text": "#FFFFFF",
+   "paper": "244,248,246",
+   "sub_bg": "rgba(24,34,58,0.88)",
+   "shadow": "31,42,68"
+  },
+  "palette": {
+   "paper": "#F4F8F6",
+   "paper2": "#DFECE6",
+   "ink": "#1F2A44",
+   "ink2": "#5B6785",
+   "white": "#FFFFFF",
+   "stone": "#C4D3CC",
+   "home": "#EEF2F6",
+   "home2": "#DDE6EE",
+   "home_floor": "#C8D3DD",
+   "clinic": "#F1F5FB",
+   "clinic2": "#DEE8F5",
+   "clinic_floor": "#C6D3E6",
+   "clinic_line": "#9FB6DA",
+   "red": "#E5484D",
+   "red_dark": "#B4232A"
+  }
+ },
+ "indigo": {
+  "label": "靛蓝：淡紫灰底、靛蓝主色",
+  "theme": {
+   "name": "indigo",
+   "accent": "#4F5BD5",
+   "accent_dark": "#3A43A8",
+   "accent_soft": "#E4E6FB",
+   "ink": "#1E2340",
+   "ink2": "#5A6080",
+   "alert": "#E5484D",
+   "alert_dark": "#B4232A",
+   "alert_soft": "#FDECEC",
+   "card": "#FFFFFF",
+   "sub_text": "#FFFFFF",
+   "paper": "245,246,252",
+   "sub_bg": "rgba(26,28,60,0.88)",
+   "shadow": "30,35,64"
+  },
+  "palette": {
+   "paper": "#F5F6FC",
+   "paper2": "#E2E5F6",
+   "ink": "#1E2340",
+   "ink2": "#5A6080",
+   "white": "#FFFFFF",
+   "stone": "#CACFE4",
+   "home": "#F1F2F8",
+   "home2": "#E1E4F0",
+   "home_floor": "#CCD0E3",
+   "clinic": "#EEF6F8",
+   "clinic2": "#DBEAEF",
+   "clinic_floor": "#C4D9DF",
+   "clinic_line": "#9CC3CC",
+   "red": "#E5484D",
+   "red_dark": "#B4232A"
+  }
+ },
+ "amber": {
+  "label": "琥珀：冷灰底、琥珀主色、炭黑字",
+  "theme": {
+   "name": "amber",
+   "accent": "#C9740A",
+   "accent_dark": "#9A5606",
+   "accent_soft": "#FBEBD3",
+   "ink": "#2A2A33",
+   "ink2": "#63636E",
+   "alert": "#E5484D",
+   "alert_dark": "#B4232A",
+   "alert_soft": "#FDECEC",
+   "card": "#FFFFFF",
+   "sub_text": "#FFFFFF",
+   "paper": "245,246,248",
+   "sub_bg": "rgba(34,34,42,0.88)",
+   "shadow": "42,42,51"
+  },
+  "palette": {
+   "paper": "#F5F6F8",
+   "paper2": "#E3E6EB",
+   "ink": "#2A2A33",
+   "ink2": "#63636E",
+   "white": "#FFFFFF",
+   "stone": "#CDD2DA",
+   "home": "#F0F2F5",
+   "home2": "#E0E4EA",
+   "home_floor": "#CCD2DB",
+   "clinic": "#EFF4F6",
+   "clinic2": "#DDE7EB",
+   "clinic_floor": "#C6D4DA",
+   "clinic_line": "#A3BBC4",
+   "red": "#E5484D",
+   "red_dark": "#B4232A"
+  }
+ }
+}

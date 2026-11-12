@@ -42,7 +42,7 @@ def edges(a):
             if len(cols) > 20:
                 l, r = int(cols.min()), int(cols.max()); out[k].append((i / 2 + 0.25, l, r, (l + r) / 2))
                 if r > right: bad.append((k, i / 2 + 0.25, r))
-    cx = (L.get('labels') or {}).get('center_x', W / 2)
+    cx = (L.get('labels') or {}).get('center_x', W / 2)   # 字卡写了 align: center 才居中；默认模板字卡左对齐，字卡区的“中心”一项只作参考
     for k, xs in out.items():
         if not xs: print(f'{k}: 没测到'); continue
         cs = np.array([x[3] for x in xs]); print(f'{k}: {len(xs)} 帧  左缘最小 {min(x[1] for x in xs)}  右缘最大 {max(x[2] for x in xs)}（限 {right}）  中心中位数 {np.median(cs):.0f}（目标 {cx}）  中心偏左 >20 px 的 {int((cs < cx - 20).sum())} 帧（长文本让出右侧，正常）')
