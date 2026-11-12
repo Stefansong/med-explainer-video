@@ -12,7 +12,7 @@ const C = require('./_common.js');
   const t0 = +(process.argv[4] || 0), t1 = +(process.argv[5] || TL.duration);
   const F0 = Math.round(t0 * fps), F1 = Math.floor(t1 * fps); const per = Math.ceil((F1 - F0) / NW);
   // 每段独立的浏览器实例：一个浏览器卡死只影响这一段，重试时换新浏览器
-  const launch = () => puppeteer.launch({ executablePath: C.CHROME, args: ['--allow-file-access-from-files'], protocolTimeout: 600000 });
+  const launch = () => C.launch({ protocolTimeout: 600000 });
   const RD = C.renderRel(); fs.mkdirSync(`${RD}/seg`, { recursive: true });
   const started = Date.now(); let done = 0, errs = 0; const checks = [], amSeg = [], fontsW = [], refsW = [];
   const W2B = {}, FF = {}, prog = [], ERRMSG = {}; let lastPrint = 0;

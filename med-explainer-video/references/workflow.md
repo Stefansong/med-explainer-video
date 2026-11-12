@@ -62,7 +62,7 @@ storyboard 主要字段（模板里每段都有 `_comment`）：
 - 写完一场先 `python $P check <专题>`（语法、函数名、图 id、cue、字卡下标；`frames` / `animatic` / `render` 开头也会自动跑）。
 - `frames` 还会做空画面检查（`tools/emptyscan.py`）：某一场一半以上的抽帧舞台上只有底色就失败；确实要留白的场在 storyboard 里写 `"allow_empty": true`。
 - `frames`：每句 35% / 85%、每张字卡出现后 0.8 s、每个 cue 后 0.5 s、场末各抽一帧 → `render/check_sheet.png`；声明了 `check_frames` 的场另出 `render/anat_sheet.png`。叠字层自检（字卡压字幕、越过安全区等）有硬错就失败，样本在 `render/check/overlay_check.json`。
-- 细看：`node "$SKILL/scripts/tools/strip.js" "src/player.html?…" t0:t1 out.png` 逐帧条带；`tools/crop.js` 裁局部。
+- 细看（在专题目录里跑）：`node "$SKILL/scripts/tools/strip.js" player 3.0:3.5 render/strip.png --cols=8` 把 3.0–3.5 秒每一帧拼成一张条带图（时刻是全片的绝对秒）；`tools/crop.js player t0:t1 out.png --at=x,y,w,h` 只裁舞台上某一块。
 
 ## animatic（预演）
 

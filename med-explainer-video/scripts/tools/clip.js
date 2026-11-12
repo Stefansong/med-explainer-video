@@ -1,6 +1,6 @@
 // 出片：node tools/clip.js <page.html[?query]> <out.mp4> [--fps=30] [--t0=0] [--t1=<页面 window.DUR>] [--crf=18] [--W=1080 --H=1920] [--audio=mix.wav]
 // 逐帧 renderAt(T) → 画布 PNG（无损）→ ffmpeg image2pipe → libx264 yuv420p，RGB→BT.709 电视范围并打标签；x264 单线程，两次编码逐位相同。
-// 与 bph/tools/render.js 同一思路（那边多页并行、分段 concat、混音），这里是单页单段的模板版，6–60 s 的演示和单场景预演够用。
+// 与 tools/render.js 同一思路（那边多页并行、分段 concat、混音），这里是单页单段的简版，6–60 s 的演示和单场景预演够用。
 'use strict';
 const { spawn } = require('child_process'); const fs = require('fs'); const path = require('path');
 const { parse, open, b64 } = require('./strip.js');

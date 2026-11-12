@@ -59,7 +59,7 @@ L.bezPath = (p0, p1, p2, p3, n = 40) => L.path([...Array(n + 1).keys()].map((i) 
 L.EXT = null;
 L.XR = (W = 1080) => (L.EXT ? L.EXT.x1 : W);                    // 右边界：横屏时 > W
 L.XL = () => (L.EXT && L.EXT.x0 < -400 ? L.EXT.x0 : 0);          // 左边界：只在舞台移到右侧时为负（舞台居左时保持原画面）
-// 皮克斯 3D 人物层（engine 每帧设置；本技能不带口型视频的生成流程，接口保留）：L.HIDE = {who: 'skip'|'faceless'} 让代码画的同一角色让位；L.PIXBG = under 模式的片段画法（L.bg 末尾调用）；
+// 视频人物层（engine 每帧设置；本技能不带口型视频的生成流程，接口保留）：L.HIDE = {who: 'skip'|'faceless'} 让代码画的同一角色让位；L.PIXBG = under 模式的片段画法（L.bg 末尾调用）；
 //   L.NOFOOT 场景自己画整幅片段时置 1（页脚淡出不叠）。角色函数开头：const h = L.hide('laozhang'); if (h === 'skip') return; if (h === 'faceless') o = { ...o, noFace: true };
 L.HIDE = null; L.PIXBG = null; L.NOFOOT = 0;
 L.hide = (who) => ((L.HIDE && L.HIDE[who]) || null);

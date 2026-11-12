@@ -9,7 +9,7 @@ const C = require('./_common.js');
   const li = ts.indexOf('--list'); if (li >= 0) { ts = ts.slice(0, li).concat(fs.readFileSync(ts[li + 1], 'utf8').split('\n').map((s) => s.trim()).filter(Boolean)); }
   if (!out || !ts.length) { console.log('node tools/frames.js <out_dir> t1 t2 ... | --list file'); process.exit(1); }
   fs.mkdirSync(out, { recursive: true });
-  const b = await puppeteer.launch({ executablePath: C.CHROME, args: ['--allow-file-access-from-files'] });
+  const b = await C.launch();
   const TL = C.loadTL(); const p = await b.newPage(); await p.setViewport({ width: TL.width, height: TL.height });
   const perr = []; p.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) perr.push(m.text()); }); p.on('pageerror', (e) => perr.push('页面脚本出错：' + e.message));
   await p.goto(C.playerUrl()); await p.waitForFunction('document.title==="ready"', { timeout: 120000 });
@@ -29,4 +29,4 @@ const C = require('./_common.js');
   await b.close();
   const all = [...new Set(Object.keys(eng).concat(perr))];
   if (all.length) { console.log(`\n✗ 画面代码有 ${all.length} 种错误（出错的场景画面是空的，左上角有品红色小方块）：`); for (const m of all.slice(0, 12)) console.log('  - ' + m); process.exit(1); }
-})();
+})().catch(C.die);

@@ -266,7 +266,9 @@ class Frames(Stage):
         lst = self.P.node('checkset.js', capture=True).stdout; (R / 'check/list.txt').write_text(lst)
         with self.P.lock('frames', 'frames 抽帧'):
             try: self.P.node('frames.js', rr('check'), '--list', rr('check/list.txt'))
-            except RuntimeError: raise RuntimeError('画面代码运行时出错（上面列出了哪一场、什么错、第几行）；改完再跑 frames')
+            except RuntimeError as e:
+                if '退出码 9' in str(e): raise RuntimeError('浏览器没启动起来（原因在上面一行）：这不是分镜或画面代码的问题，关掉多余的程序后再跑一次 frames')
+                raise RuntimeError('画面代码运行时出错（上面列出了哪一场、什么错、第几行）；改完再跑 frames')
             self.P.pyt('sheet.py', rr('check'), rr('check_sheet.png'), '6')
             r = subprocess.run([self.P.py, '-X', 'utf8', self.P.tools / 'emptyscan.py', rr('check')], cwd=self.P.root, env=self.P.env())   # 有的场是不是空的
             if r.returncode: raise RuntimeError('有的场画面是空的（上面列出了是哪一场）；改完再跑 frames。联系表 ' + rr('check_sheet.png') + ' 可以对照着看')

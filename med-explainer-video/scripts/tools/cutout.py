@@ -33,8 +33,10 @@ def main(a):
             # 围住的空洞（杯柄里）和半透明处（热气、玻璃）都按颜色处理，不靠连通性
             D = bg > 128; O = ~D
             key = rgb[..., D].min(-1) - (rgb[..., O].max(-1) if O.any() else 0); bk = bg[D].min() - (bg[O].max() if O.any() else 0)
-            a_ = 1 - np.clip(key / max(1.0, bk), 0, 1)   # 混合像素按比例还原（热气 30% 白 + 70% 品红 → alpha 0.3、颜色还原成白）
-            alpha = np.where(a_ > 0.75, 1.0, a_) * 255     # 主体上略带底色倾向的颜色（浅粉衣服）不变半透明；主体本身偏品红就改用绿底出图
+            a_ = 1 - np.clip(key / max(1.0, bk), 0, 1)   # 每个像素里“不是底色”的比例（热气 30% 白 + 70% 品红 → 0.3）
+            # 生图的底色常常不均匀（有渐变、有暗角），会在主体四周留下一层很淡的雾：量一下四边的残留，低于 lo 的一律算背景
+            noise = float(np.percentile(np.concatenate([a_[:b].ravel(), a_[-b:].ravel(), a_[:, :b].ravel(), a_[:, -b:].ravel()]), 99.5)); lo = min(0.3, max(0.06, noise + 0.04))
+            alpha = np.clip((a_ - lo) / (0.75 - lo), 0, 1) * 255   # 0.75 以上当不透明：主体上略带底色倾向的颜色（浅粉衣服）不变半透明；主体本身偏品红就改用绿底出图
         else:
             # 中性底色（白 / 灰）：与四边连通、和底色相近的像素当背景（主体里同色的地方不挖）
             near = d < tol; lab, n = ndimage.label(near)
@@ -45,14 +47,12 @@ def main(a):
             alpha[ring] = np.clip((d[ring] - tol) / tol, 0, 1) * 255
         if (alpha < 10).mean() < 0.15: print(f'!! 背景只认出 {(alpha < 10).mean():.0%}：底色不纯或和主体太像，换纯色底重出，或调 --tol')
         if bg.max() - bg.min() > 120:
-            # 主体边缘 6 px 里不透明、但染了底色的像素（白头发的粉边、深色衣服的紫边）：按键值估出混进了多少底色，把那部分减掉、亮度还原。
-            # 只动边缘这一圈，主体内部本来偏粉的颜色（腮红、粉色衣服）不动
-            band = ndimage.binary_dilation(alpha < 128, iterations=6) & (alpha >= 255)
-            if band.any():
-                t = np.clip(a_[band], 0.6, 1.0)[:, None]; rgb[band] = np.clip((rgb[band] - (1 - t) * bg) / t, 0, 255)
-        k = (alpha > 0) & (alpha < 255)   # 去溢色：半透明像素减掉背景色的成分
-        if k.any():
-            t = (alpha[k] / 255.0)[:, None]; rgb[k] = np.clip((rgb[k] - (1 - t) * bg) / np.maximum(t, 0.05), 0, 255)
+            # 去溢色：凡是混进了底色的像素（半透明的边缘、主体上被底色映到的地方，比如白色物体朝下的面），按混合比例把底色减掉、亮度还原
+            k = (a_ < 0.999) & (alpha > 0)
+            if k.any(): t = np.clip(a_[k], 0.2, 1.0)[:, None]; rgb[k] = np.clip((rgb[k] - (1 - t) * bg) / t, 0, 255)
+        else:
+            k = (alpha > 0) & (alpha < 255)   # 中性底色：半透明像素减掉背景色的成分
+            if k.any(): t = (alpha[k] / 255.0)[:, None]; rgb[k] = np.clip((rgb[k] - (1 - t) * bg) / np.maximum(t, 0.05), 0, 255)
         px[..., :3] = rgb
     alpha = np.asarray(alpha, np.float32).copy(); alpha[:3] = 0; alpha[-3:] = 0; alpha[:, :3] = 0; alpha[:, -3:] = 0   # 生图常在最外圈留一两列杂色（立绘旁边会多一条细线）
     px[..., 3] = np.where(alpha > 245, 255, alpha)

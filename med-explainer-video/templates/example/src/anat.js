@@ -1,58 +1,48 @@
-// 解剖图（本集自有，代码手绘，不用生图）：右肾冠状剖面 + 输尿管 + 膀胱，正面观。
-// 约定：AN.xxx(c, x, y, s, o)，(x, y) = 肾的中心，s = 1 时肾高约 400；颜色取 L.P（storyboard.style.palette），画面零文字。
-// 核对清单见 storyboard.anatomy_checks：肾门朝内侧（画面右）；肾盏 → 肾盂 → 输尿管；输尿管向下略向内进膀胱；梗阻以上扩张、以下不扩张。
+// 示意图（本集自有，代码手绘，不用生图）：坐着量血压的人，正面观，不画五官——躯干、心脏、绑着袖带的上臂、平放在桌面上的前臂、桌子和血压计。
+// 约定：AN.xxx(c, x, y, s, o)，(x, y) = 胸口正中，s = 1 时肩宽约 320、上臂长约 233（按 30 cm 折算，1 cm ≈ 7.8）、整体高约 800（头顶 −370，桌子底 +450）；颜色取 L.P（storyboard.style.palette），画面零文字。
+// 核对清单见 storyboard.anatomy_checks：正面观人物的左侧在画面右侧，心脏在中线偏画面右；袖带下缘在肘窝上方约两横指（2.5 cm ≈ 20）；上臂中点与心脏在同一条水平线上。
 'use strict';
 const AN = {};
 (() => {
-  // 肾轮廓：蚕豆形，外侧缘（左）凸，内侧缘（右）中部凹进去 = 肾门
-  const kidneyPath = (c, k = 1) => { c.beginPath(); c.moveTo(10 * k, -200 * k);
-    c.bezierCurveTo(-120 * k, -205 * k, -150 * k, -80 * k, -150 * k, 0); c.bezierCurveTo(-150 * k, 90 * k, -115 * k, 205 * k, 5 * k, 200 * k);
-    c.bezierCurveTo(95 * k, 197 * k, 120 * k, 120 * k, 92 * k, 62 * k); c.bezierCurveTo(74 * k, 30 * k, 74 * k, -30 * k, 92 * k, -62 * k);
-    c.bezierCurveTo(122 * k, -120 * k, 100 * k, -196 * k, 10 * k, -200 * k); c.closePath(); };
-  // 肾锥体（尖朝肾窦）与对应的肾盏杯口：[锥体底中心 x, y, 尖端 x, y]
-  const PYR = [[-52, -150, -8, -92], [-112, -82, -42, -46], [-126, 4, -50, 4], [-112, 88, -42, 50], [-50, 152, -8, 96]];
-  const PELVIS = [58, 4];      // 肾盂中心（肾门处）
-  const UPJ = [108, 62];       // 肾盂输尿管连接处
-  // 输尿管中线：从 UPJ 向下、略向内，进膀胱（三段贝塞尔的控制点，肾坐标系）
-  const URE = [UPJ, [118, 170], [168, 270], [178, 392]];
-  const BLAD = [222, 462];     // 膀胱中心（输尿管从后上方斜着进膀胱壁）
-  AN.STUCK = L.bezPt(URE[0], URE[1], URE[2], URE[3], 0.3);   // 嵌顿点：输尿管上段
-  AN.CALYX = [PYR[4][2] + 14, PYR[4][3] - 4];                 // 下肾盏（结石形成处）
-  // 结石路径 u：0 = 下肾盏，0.5 = 肾盂，1 = 输尿管上段嵌顿点
-  AN.stonePos = (u) => { u = L.clamp(u); if (u < 0.5) { const k = L.easeInOut(u / 0.5); return [L.lerp(AN.CALYX[0], PELVIS[0] + 6, k), L.lerp(AN.CALYX[1], PELVIS[1] + 14, k)]; }
-    const k = L.easeInOut((u - 0.5) / 0.5), a = [PELVIS[0] + 6, PELVIS[1] + 14]; const m = [(a[0] + UPJ[0]) / 2 + 8, (a[1] + UPJ[1]) / 2];
-    return k < 0.5 ? [L.lerp(a[0], m[0], k * 2), L.lerp(a[1], m[1], k * 2)] : [L.lerp(m[0], AN.STUCK[0], k * 2 - 1), L.lerp(m[1], AN.STUCK[1], k * 2 - 1)]; };
-
-  // o: dilate 0–1 梗阻以上（肾盏、肾盂、嵌顿点以上的输尿管）扩张程度；urine 尿液颜色（浓 → 深黄）；t 时间（只用于轻微的蠕动）
-  AN.tract = (c, x, y, s = 1, o = {}) => L.with(c, () => { const P = L.P, d = L.clamp(o.dilate || 0), ur = o.urine || P.tube;
-    // 膀胱
-    c.beginPath(); c.moveTo(BLAD[0] - 92, BLAD[1] - 30); c.bezierCurveTo(BLAD[0] - 96, BLAD[1] - 96, BLAD[0] + 96, BLAD[1] - 96, BLAD[0] + 92, BLAD[1] - 30);
-    c.bezierCurveTo(BLAD[0] + 96, BLAD[1] + 44, BLAD[0] + 52, BLAD[1] + 86, BLAD[0], BLAD[1] + 88); c.bezierCurveTo(BLAD[0] - 52, BLAD[1] + 86, BLAD[0] - 96, BLAD[1] + 44, BLAD[0] - 92, BLAD[1] - 30); c.closePath();
-    c.fillStyle = P.bladder; c.fill(); c.lineWidth = 10; c.strokeStyle = L.mix(P.bladder, P.kidney_dark, 0.45); c.stroke();
-    L.ellipse(c, BLAD[0], BLAD[1] + 8, 62, 48, L.alpha(P.tube, 0.75)); L.ellipse(c, BLAD[0] - 26, BLAD[1] - 44, 30, 12, 'rgba(255,255,255,0.35)', -0.3);
-    // 输尿管：嵌顿点以下正常粗细，以上随 d 变粗
-    const wN = 13, wUp = wN + 15 * d, cut = 0.3;
-    const seg = (t0, t1, w, col) => { const pts = []; for (let k = 0; k <= 24; k++) pts.push(L.bezPt(URE[0], URE[1], URE[2], URE[3], L.lerp(t0, t1, k / 24))); L.line(c, pts, w, col); };
-    seg(cut, 1, wN + 8, P.tube_dark); seg(cut, 1, wN, P.tube); seg(0, cut, wUp + 8, P.tube_dark); seg(0, cut, wUp, ur);
-    // 肾：包膜 → 皮质 → 锥体 → 肾窦脂肪 → 肾盏肾盂
-    kidneyPath(c, 1); c.fillStyle = P.kidney_dark; c.fill(); kidneyPath(c, 0.955); c.fillStyle = P.kidney; c.fill();
-    c.save(); kidneyPath(c, 0.955); c.clip();
-    c.beginPath(); c.moveTo(96, -70); c.bezierCurveTo(20, -120, -70, -70, -70, 2); c.bezierCurveTo(-70, 76, 20, 124, 96, 72); c.closePath(); c.fillStyle = P.sinus; c.fill();   // 肾窦
-    for (const [bx, by, ax, ay] of PYR) { const dx = ax - bx, dy = ay - by, n = Math.hypot(dx, dy), px = -dy / n, py = dx / n, hw = 40;   // 锥体：底宽 80 的圆角三角
-      c.beginPath(); c.moveTo(bx + px * hw, by + py * hw); c.quadraticCurveTo(bx - dx * 0.16, by - dy * 0.16, bx - px * hw, by - py * hw); c.lineTo(ax, ay); c.closePath(); c.fillStyle = P.medulla; c.fill();
-      for (let k = -2; k <= 2; k++) L.line(c, [[bx + px * k * 13, by + py * k * 13], [ax + px * k * 2, ay + py * k * 2]], 2, L.alpha(P.kidney, 0.35)); }
+  const P = () => L.P;
+  // 关键点（局部坐标），场景代码用它们叠加脉动圈、水平线：L.with(c, …, {x, y, s}) 或 x + AN.HEART[0] * s
+  AN.SHOULDER = [-158, -118];   // 画面左侧的肩（人物的右肩）
+  AN.ELBOW = [-196, 112];       // 肘（肘窝在它的内侧）
+  AN.MID = [-177, -3];          // 上臂中点 = 肩和肘的中点
+  AN.HEART = [46, -6];          // 心脏中心：胸部中线偏画面右（人物的左侧）
+  AN.TABLE_Y = 142;             // 桌面的高度：前臂平放在上面
+  const along = (k) => [L.lerp(AN.SHOULDER[0], AN.ELBOW[0], k), L.lerp(AN.SHOULDER[1], AN.ELBOW[1], k)];   // 上臂上从肩（0）到肘（1）的点
+  const heart = (c, x, y, s, col, colD) => L.with(c, () => { c.beginPath(); c.moveTo(0, 62); c.bezierCurveTo(-92, 2, -72, -82, 0, -40); c.bezierCurveTo(72, -82, 92, 2, 0, 62); c.fillStyle = col; c.fill();
+    c.lineWidth = 6; c.strokeStyle = colD; c.stroke(); L.ellipse(c, -30, -28, 14, 9, 'rgba(255,255,255,0.55)', -0.5); }, { x, y, s });
+  // o: arm 0..1 手臂和袖带出现的进度；beat 心跳用的时间（秒）；monitor false 不画血压计
+  AN.seated = (c, x, y, s = 1, o = {}) => L.with(c, () => {
+    const p = P(), body = p.body || '#CFD8E6', bodyD = p.body_dark || '#AEBBD0', wood = p.wood || '#C9A77C', woodD = p.wood_dark || '#B08D62', cuff = p.cuff || '#7F93B2', cuffL = p.cuff_light || '#A9B8D0', arm = o.arm ?? 1;
+    // 椅背（在身后）
+    L.fillRR(c, -146, -64, 292, 360, 34, L.alpha(woodD, 0.5));
+    // 另一侧的手臂（画面右）：自然下垂，手放在腿上，被桌子挡住
+    L.line(c, [[158, -116], [188, 96], [150, 230]], 60, bodyD);
+    // 躯干：肩宽 320，往下略收；脖子；头（不画五官）
+    c.beginPath(); c.moveTo(-160, -100); c.bezierCurveTo(-160, -150, -112, -168, -60, -170); c.lineTo(60, -170); c.bezierCurveTo(112, -168, 160, -150, 160, -100); c.lineTo(140, 300); c.lineTo(-140, 300); c.closePath(); c.fillStyle = body; c.fill();
+    L.fillRR(c, -34, -212, 68, 64, 20, bodyD); L.circle(c, 0, -284, 86, body);
+    // 心脏：轻轻跳动
+    heart(c, AN.HEART[0], AN.HEART[1], 0.62 * (1 + 0.05 * Math.sin((o.beat || 0) * 6.5)), p.heart || p.red, p.heart_dark || p.red_dark);
+    // 桌子（在身前，挡住下半身）：一块前挡板 + 桌面
+    L.fillRR(c, -350, AN.TABLE_Y + 18, 600, 290, 14, L.mix(wood, '#FFFFFF', 0.28)); L.fillRR(c, -380, AN.TABLE_Y, 660, 38, 12, woodD);
+    // 血压计：白盒子、空白屏幕、两个按钮（不画读数）
+    if (o.monitor !== false) { L.fillRR(c, 96, AN.TABLE_Y - 96, 138, 98, 18, '#FFFFFF'); L.fillRR(c, 110, AN.TABLE_Y - 84, 110, 50, 10, '#DCE3EC'); L.circle(c, 138, AN.TABLE_Y - 18, 8, p.red); L.circle(c, 166, AN.TABLE_Y - 18, 8, p.water_dark); }
+    if (arm <= 0.01) return;
+    c.save(); c.globalAlpha *= L.clamp(arm);
+    // 量血压的手臂（画面左）：上臂从肩到肘，前臂平放在桌面上伸向血压计
+    const hand = [-64, AN.TABLE_Y - 24];
+    L.line(c, [AN.SHOULDER, AN.ELBOW], 66, bodyD); L.line(c, [AN.ELBOW, hand], 54, bodyD); L.circle(c, hand[0] + 6, hand[1], 30, bodyD);
+    // 袖带：宽约 12 cm（93），下缘在肘窝上方约 2.5 cm（20）——从肩往下 0.515 到 0.914 这一段
+    const a0 = along(0.515), a1 = along(0.914), ang = Math.atan2(a1[1] - a0[1], a1[0] - a0[0]), len = Math.hypot(a1[0] - a0[0], a1[1] - a0[1]);
+    L.with(c, () => { L.fillRR(c, 0, -43, len, 86, 16, cuff); L.fillRR(c, len * 0.34, -43, 12, 86, 4, cuffL); L.fillRR(c, len * 0.62, -43, 12, 86, 4, cuffL); }, { x: a0[0], y: a0[1], r: ang });
+    // 气管：从袖带下缘绕到桌上的血压计
+    if (o.monitor !== false) L.bez(c, [a1[0] + 30, a1[1] - 6], [-60, AN.TABLE_Y - 120], [40, AN.TABLE_Y - 20], [98, AN.TABLE_Y - 50], 9, cuff);
+    // 上臂中点：一个小白点（水平线从这里出发）
+    L.circle(c, AN.MID[0], AN.MID[1], 11, '#FFFFFF'); L.circle(c, AN.MID[0], AN.MID[1], 6, p.water_dark);
     c.restore();
-    // 肾盏（杯口朝锥体尖）+ 漏斗 → 肾盂 → UPJ；扩张时整体变粗、杯口变钝
-    const cw = 10 + 13 * d;
-    for (const [, , ax, ay] of PYR) { L.line(c, [[ax + 6, ay + (ay < 0 ? 4 : ay > 0 ? -4 : 0)], PELVIS], cw + 8, P.tube_dark); }
-    L.ellipse(c, PELVIS[0], PELVIS[1], 30 + 14 * d, 27 + 15 * d, P.tube_dark); L.line(c, [PELVIS, [86, 32], UPJ], wUp + 10, P.tube_dark);
-    for (const [, , ax, ay] of PYR) { L.line(c, [[ax + 6, ay + (ay < 0 ? 4 : ay > 0 ? -4 : 0)], PELVIS], cw, ur); L.circle(c, ax + 3, ay, cw * 0.9, P.tube_dark); L.circle(c, ax + 3, ay, cw * 0.9 - 3.5, ur); }
-    L.ellipse(c, PELVIS[0], PELVIS[1], 26 + 14 * d, 23 + 15 * d, ur); L.line(c, [PELVIS, [86, 32], UPJ], wUp + 3, ur);
-    L.ellipse(c, -96, -92, 16, 44, 'rgba(255,255,255,0.22)', 0.5);   // 皮质高光
   }, { x, y, s });
-
-  // 结石：不规则多面小块。r 半径（肾坐标系），画在 AN.tract 同一坐标系里：L.with(c, () => AN.stone(c, px, py, r), {x, y, s})
-  AN.stone = (c, px, py, r, seed = 7) => { if (r <= 0.5) return; const R = L.rand(seed), pts = []; for (let k = 0; k < 9; k++) { const a = k / 9 * Math.PI * 2, rr = r * (0.78 + 0.34 * R()); pts.push([px + Math.cos(a) * rr, py + Math.sin(a) * rr]); }
-    L.poly(c, pts.map(([u, v]) => [u + 2, v + 3]), 'rgba(59,47,74,0.25)'); L.poly(c, pts, L.P.crystal); L.poly(c, pts.slice(0, 4).concat([[px, py]]), L.alpha('#FFFFFF', 0.22)); };
 })();
 if (typeof module !== 'undefined') module.exports = AN; else window.AN = AN;

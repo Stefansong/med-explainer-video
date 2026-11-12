@@ -122,8 +122,9 @@ def check(root):
     for w in sorted(x for x in whos if x in chars and x not in (SB.get('voices') or {})): W.append(f'角色 {w} 有台词，但 voices 里没写由谁来配')
     for w in sorted(x for x in chars if x not in whos and x != 'narrator'): W.append(f'角色 {w} 在 characters 里，但全片没有一句台词：是模板占位就删掉（voices 里对应的也删）')
     ph = lambda v: isinstance(v, str) and re.match(r'^（.*）$', v.strip())
-    for path, v in [('title', SB.get('title')), ('片尾口号 outro.slogan', (SB.get('outro') or {}).get('slogan'))] + [(f'角色 {k} 的名字', (c or {}).get('name')) for k, c in chars.items()] + [(f'口径 {c.get("id")}', c.get('text')) for c in SB['claims']] + [(f'来源 {k}', v) for k, v in (SB.get('sources') or {}).items() if not k.startswith('_')] + [(f'署名 credits[{i}]', c if isinstance(c, str) else (c or {}).get('text')) for i, c in enumerate(SB.get('credits') or [])]:
+    for path, v in [('title', SB.get('title')), ('片尾口号 outro.slogan', (SB.get('outro') or {}).get('slogan')), ('画风 style.art', (SB.get('style') or {}).get('art'))] + [(f'角色 {k} 的名字', (c or {}).get('name')) for k, c in chars.items()] + [(f'口径 {c.get("id")}', c.get('text')) for c in SB['claims']] + [(f'来源 {k}', v) for k, v in (SB.get('sources') or {}).items() if not k.startswith('_')] + [(f'署名 credits[{i}]', c if isinstance(c, str) else (c or {}).get('text')) for i, c in enumerate(SB.get('credits') or [])]:
         if ph(v) or (isinstance(v, str) and '（你的署名' in v): W.append(f'{path} 还是模板占位：{v}')
+    if not (SB.get('style') or {}).get('art') and (SB.get('assets') or any((c or {}).get('art3d') for c in chars.values())): W.append('style.art 没写画风：出图前先和用户定画风，写成一段话，每张图的提示词都以它开头（references/characters_3d.md 第 0 节）')
     tgt = SB.get('target_seconds')
     if tgt:
         est = total_chars / 4.5 + len(scenes) * 1.2 + 6   # 台词 + 场间停顿 + 片尾

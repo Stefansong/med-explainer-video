@@ -11,6 +11,16 @@ const BROWSERS = process.platform === 'win32'
     : ['/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/microsoft-edge'];
 const CHROME = process.env.CHROME_PATH || BROWSERS.find((p) => { try { return fs.existsSync(p); } catch (_) { return false; } }) || BROWSERS[0];
 const fileUrl = (p) => pathToFileURL(path.resolve(p)).href;
+// 启动浏览器：偶尔会刚启动就退出（系统正忙、上一个实例还没退干净），隔一会儿重试，最多 3 次；还不行就报一句人话（err.browser = true，工具用退出码 9）
+const launch = async (opts = {}) => {
+  const puppeteer = require('puppeteer-core'); let last;
+  for (let i = 0; i < 3; i++) {
+    try { return await puppeteer.launch({ executablePath: CHROME, args: ['--allow-file-access-from-files'], ...opts }); }
+    catch (e) { last = e; await new Promise((r) => setTimeout(r, 1500 * (i + 1))); }
+  }
+  const err = new Error(`浏览器没启动起来（${CHROME}）：${String((last && last.message) || last).split('\n')[0]}。关掉多余的程序后再跑一次；一直不行就重跑 setup 检查浏览器`); err.browser = true; throw err;
+};
+const die = (e) => { console.log('✗ ' + (e && e.browser ? e.message : '工具出错：' + ((e && e.stack) || e))); process.exit(e && e.browser ? 9 : 1); };
 const ORIENT = ['land', 'landscape', 'h', '横屏'].includes((process.env.ORIENT || 'port').toLowerCase()) ? 'land' : 'port';
 const LAND = ORIENT === 'land';
 const renderRel = (name = '') => { const base = LAND ? 'render/land' : 'render'; return name ? `${base}/${name}` : base; };   // 相对项目根（工具都 chdir 到 ROOT）
@@ -46,4 +56,4 @@ const playerUrl = (extra = {}, root = ROOT) => {
 const parseT = (TL, s) => { let m = String(s).match(/^(s\d+)@(\w+)([+-][\d.]+)?$/); if (m) { const sc = TL.scenes.find((x) => x.id === m[1]); return sc.start + sc.cues[m[2]] + (+m[3] || 0); } if (String(s).includes('+')) { const [id, dt] = String(s).split('+'); return TL.scenes.find((x) => x.id === id).start + +dt; } return +s; };
 const localIso = () => { const d = new Date(), z = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`; };   // 与 Python 侧同用本地时间
 const log = (line, root = ROOT) => { const f = path.join(renderDir(root), 'pipeline.log'); fs.appendFileSync(f, `${localIso()} ${line}\n`); };
-module.exports = { ROOT, CHROME, fileUrl, ORIENT, LAND, renderRel, renderDir, findStoryboard, loadSB, layoutPath, loadLayout, loadTL, playerUrl, parseT, log };
+module.exports = { ROOT, CHROME, launch, die, fileUrl, ORIENT, LAND, renderRel, renderDir, findStoryboard, loadSB, layoutPath, loadLayout, loadTL, playerUrl, parseT, log };

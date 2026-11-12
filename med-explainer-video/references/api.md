@@ -8,8 +8,8 @@
 SC.s03 = (c, A) => {
   const t = A.t, ok = A.cue('ok');        // 时刻一律从 storyboard 的 cue / 字卡 / 台词取，不要写死秒数
   SH.home(c, t);                           // 1. 先铺满底色
-  SH.IC(c, A, 'ic_bottle', 210, 760, 400, { pop: (t - A.cue('water')) / 0.45 });   // 2. 道具
-  SH.SP(c, A, 'sp_zhou_drink', SH.spX(A, 'sp_zhou_drink', 800, 620), 1180, 620, { pop: (t - ok) / 0.45 });   // 3. 人物
+  SH.IC(c, A, 'ic_bpmonitor', 300, 970, 440, { pop: t / 0.45, shadow: true });   // 2. 道具（开场第一秒就在）
+  SH.SP(c, A, 'sp_lin_point', SH.spX(A, 'sp_lin_point', 790, 540), 1190, 540, { pop: (t - ok) / 0.45 });   // 3. 人物（到 ok 这个时刻弹出）
 };
 ```
 
@@ -116,6 +116,6 @@ SC.s03 = (c, A) => {
    - **所有尺寸都是像素**（设计坐标，画面宽 1080）：立绘高度 600–760、图标 300–420。只有 `PR.xxx(c, x, y, s)` 和 `L.with(…, {s})` 里的 `s` 是倍数。
 3. 报错里的行号指 `src/scenes.js`；“相近的有：…”是它猜你想写的名字。
 
-## 解剖 `src/anat.js`
+## 解剖图和示意图 `src/anat.js`
 
-约定 `AN.xxx(c, x, y, s, o)`，参数驱动（比如 `dilate` 扩张程度、`urine` 尿色），关键点坐标导出成常量（样例里的 `AN.STUCK`、`AN.CALYX`、`AN.stonePos(u)`），场景代码在同一坐标系里叠加结石、箭头、脉动圈：`L.with(c, () => {…}, {x, y, s})`。画法和核对清单见 anatomy.md。
+约定 `AN.xxx(c, x, y, s, o)`，参数驱动（样例 `AN.seated` 的 `arm` 手臂出现进度、`beat` 心跳时间），关键点坐标导出成常量（样例里的 `AN.HEART`、`AN.MID`），场景代码在同一坐标系里叠加脉动圈、水平线、箭头：`SH.spot(c, x + AN.HEART[0] * s, y + AN.HEART[1] * s, …)`，或 `L.with(c, () => {…}, {x, y, s})`。画法和核对清单见 anatomy.md。

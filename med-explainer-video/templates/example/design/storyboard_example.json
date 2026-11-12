@@ -1,9 +1,9 @@
 {
  "project": "example",
- "title": "水喝少了，小心肾结石",
+ "title": "在家量血压，这样才准",
  "title_card": {
-  "main": "水喝少了",
-  "sub": "小心肾结石"
+  "main": "在家量血压",
+  "sub": "这样才准"
  },
  "version": "0.1",
  "status": {
@@ -31,73 +31,88 @@
  "width": 1080,
  "height": 1920,
  "target_seconds": 45,
- "_characters_note": "art3d = 3D 卡通定妆图（S3 用平台生图出）：必须全身（头顶到鞋底完整）、正面或 3/4 侧、自然站姿、纯色浅背景、不带场景、无文字；衣服鞋子在这张定死，之后每张姿势图都拿它当长相参考。",
+ "_characters_note": "art3d = 角色定妆图（S3 用平台生图出，画风写在 style.art）：必须全身（头顶到鞋底完整）、正面或 3/4 侧、自然站姿、纯色浅背景、不带场景、无文字；衣服鞋子在这张定死，之后每张姿势图都拿它当长相参考。",
  "characters": {
   "narrator": {
    "name": "旁白",
    "desc": "不出镜；亲切、专业的医生口吻"
   },
-  "zhou": {
-   "name": "小周",
-   "desc": "三十出头的上班族，一忙起来就忘了喝水",
-   "color": "#5B8FD0",
-   "art3d": "assets/lib/characters/zhou/zhou_v1_c1.png"
+  "lin": {
+   "name": "林阿姨",
+   "desc": "六十出头，退休教师，爱操心，做事认真",
+   "color": "#C2577A",
+   "art3d": "assets/lib/characters/lin/lin_v1_c1.png"
   }
  },
  "places": {
-  "office": {
-   "name": "办公室",
-   "desc": "傍晚的办公室，落地窗，木桌，笔记本电脑，一杯水，一盆绿植",
-   "art": "assets/lib/scenes/fs_zhou_desk.png"
+  "home": {
+   "name": "家里餐桌旁",
+   "desc": "米白色墙、一扇窗、一盆绿植、木头餐桌和椅子，下午的柔和光线",
+   "art": "assets/lib/scenes/fs_lin_home.png"
   }
  },
  "claims": [
   {
-   "id": "P1",
-   "text": "尿量少、尿液浓缩是尿路结石形成的危险因素；结石由尿中晶体物质析出、聚集而成。",
-   "src": "CUA2022"
+   "id": "B1",
+   "text": "测量前安静休息至少 5 分钟；测量前 30 分钟内不吸烟、不喝咖啡或茶，排空膀胱。",
+   "src": "JC2020",
+   "quote": "去除可能有影响的因素（测量前 30 分钟内禁止吸烟、饮咖啡或茶等，排空膀胱），安静休息至少 5 分钟。"
   },
   {
-   "id": "P2",
-   "text": "结石嵌顿在输尿管可引起肾绞痛（腰腹部剧烈疼痛）。",
-   "src": "CUA2022"
+   "id": "B2",
+   "text": "测量时取坐位，双脚平放在地面，放松，身体不动，不说话。",
+   "src": "JC2020",
+   "quote": "测量时取坐位，双脚平放于地面，放松且身体保持不动，不说话。"
   },
   {
-   "id": "P3",
-   "text": "预防结石复发：增加液体摄入，使每天的尿量保持在 2.0–2.5 L 以上。",
-   "src": "CUA2022"
+   "id": "B3",
+   "text": "袖带下缘在肘窝上 2.5 cm（约两横指），松紧以能插入 1～2 指为宜。",
+   "src": "JC2020",
+   "quote": "袖带下缘应在肘窝上 2.5cm（约两横指）处，松紧合适，可插入 1 ~ 2 指为宜。"
   },
   {
-   "id": "P4",
-   "text": "结石梗阻合并感染（发热、寒战），或无尿，属于急症，需要立即就医处理。",
-   "src": "CUA2022"
+   "id": "B4",
+   "text": "上臂中点与心脏处于同一水平线上。",
+   "src": "JC2020",
+   "quote": "上臂中点与心脏处于同一水平线上"
+  },
+  {
+   "id": "R1",
+   "text": "血压≥180/110 mmHg 伴剧烈头痛、呕吐，或突发言语障碍和/或肢体瘫痪：建议急救车转诊。",
+   "src": "JC2020",
+   "quote": "（2）血压≥180/110 mmHg 伴剧烈头痛、呕吐，或突发言语障碍和 / 或肢体瘫痪；"
+  },
+  {
+   "id": "R2",
+   "text": "血压显著升高伴持续性胸背部剧烈疼痛；血压升高伴下肢水肿、呼吸困难或不能平卧：建议急救车转诊。",
+   "src": "JC2020",
+   "quote": "（3）血压显著升高伴持续性胸背部剧烈疼痛；（4）血压升高伴下肢水肿、呼吸困难或不能平卧；"
   }
  ],
  "red_flags": [
-  "腰痛伴发热寒战",
-  "完全尿不出来"
+  "血压很高伴剧烈头痛、呕吐或说话不清、肢体瘫痪",
+  "血压很高伴持续胸背剧痛或喘不上气、不能平卧"
  ],
- "red_flags_action": "立即去急诊",
+ "red_flags_action": "立即叫救护车",
  "sources": {
-  "CUA2022": "黄健、张旭主编《中国泌尿外科和男科疾病诊断治疗指南（2022 版）》尿石症章节，科学出版社（样例引用：正式使用前请核对原文）"
+  "JC2020": "国家心血管病中心、国家基本公共卫生服务项目基层高血压管理办公室《国家基层高血压防治管理指南 2020 版》，2020 年 12 月，国家心血管病中心网站 nccd.org.cn（PDF 全文，2026-11-11 检索并核对原句）。指南面向基层医务人员，家庭自测的做法另见配套《手册》；已有更新版本。样例引用：正式使用前请按最新版核对原文"
  },
  "disclaimer": "本片仅供科普，不能替代医生面诊",
  "outro": {
-  "slogan": "多喝水 • 别硬扛",
+  "slogan": "量得准 • 才有用",
   "ai_note": "角色形象与道具图标由 AI 生成",
   "references": [
-   "参考：中国泌尿外科和男科疾病诊断治疗指南（2022 版）"
+   "参考：国家基层高血压防治管理指南 2020 版"
   ]
  },
  "credits": [
   "样例专题 · med-explainer-video"
  ],
  "anatomy_checks": [
-  "正面观的右肾：肾门朝向内侧（画面右侧，靠身体中线）",
-  "肾盏汇成肾盂，肾盂在肾门处移行为输尿管",
-  "输尿管自肾门向下、略向内行，进入膀胱",
-  "结石在肾盏内形成；嵌顿点画在肾盂输尿管连接处下方（输尿管上段）",
-  "梗阻以上（肾盂、肾盏）扩张，梗阻以下输尿管不扩张"
+  "正面观：人物的左侧在画面右侧；心脏画在胸部中线偏画面右侧",
+  "袖带绑在上臂中段，下缘在肘窝上方，不压到肘窝",
+  "前臂平放在桌面上，上臂中点（袖带中心）与心脏在同一条水平线上",
+  "示意图不画五官，不画血压读数"
  ],
  "_anatomy_masters": "系列解剖库 Kepu/anatomy/ 里要用的母版（如 [\"kidney_tract_v1\", \"prostate_v2\"]）；python3 tools/anat_use.py --palette 生成 src/anat.js、补色键。新画的结构先在库里起候选母版",
  "anatomy_masters": [],
@@ -111,20 +126,14 @@
   },
   {
    "id": "c1",
-   "node": "认识它",
+   "node": "怎么量",
    "scenes": [
-    "s02"
-   ]
-  },
-  {
-   "id": "c2",
-   "node": "怎么办",
-   "scenes": [
+    "s02",
     "s03"
    ]
   },
   {
-   "id": "c3",
+   "id": "c2",
    "node": "危险信号",
    "scenes": [
     "s04"
@@ -135,26 +144,26 @@
   {
    "id": "s01",
    "chapter": "c0",
-   "place": "office",
-   "beat": "冷开场：小周忙得顾不上喝水 → 腰突然疼",
-   "hook": "很多上班族都这样",
+   "place": "home",
+   "beat": "冷开场：林阿姨买菜回来，喘着气就量血压 → 数字吓一跳",
+   "hook": "很多人都是进门就量",
    "claims": [],
-   "visual": "满幅 3D 镜头（办公室，桌上一杯没动过的水）缓慢推近；说到“腰”时切到纯色底 + 扶腰立绘 + 一个红色警示符号。片名在开场 5 秒内出现在舞台上部。",
+   "visual": "满幅镜头（餐桌旁，手臂上绑着袖带，皱着眉看血压计）缓慢推近；说到“高”时切到纯色底 + 吃惊的立绘 + 一个红色警示符号。片名在开场 5 秒内出现在舞台上部。",
    "lines": [
     {
      "who": "narrator",
-     "text": "小周一忙起来，一下午都顾不上喝一口水。",
+     "text": "林阿姨买菜回来，一进门就量血压。",
      "emo": "intrigued"
     },
     {
-     "who": "zhou",
-     "text": "忙完再喝！",
-     "emo": "light"
+     "who": "lin",
+     "text": "怎么这么高！",
+     "emo": "surprised"
     },
     {
      "who": "narrator",
-     "text": "直到有一天，他的腰突然疼了起来。",
-     "emo": "tense",
+     "text": "别慌，先看看量的方法对不对。",
+     "emo": "warm",
      "hold": 0.4
     }
    ],
@@ -162,23 +171,23 @@
     {
      "at": [
       0,
-      "顾不上"
+      "一进门"
      ],
-     "text": "久坐少喝水"
+     "text": "进门就量"
     },
     {
      "at": [
       2,
-      "腰"
+      "方法"
      ],
-     "text": "突发腰痛",
+     "text": "方法对，才量得准",
      "big": true
     }
    ],
    "cues": {
-    "pain": [
-     2,
-     "腰"
+    "shock": [
+     1,
+     "高"
     ]
    },
    "lead": 0.4
@@ -186,23 +195,30 @@
   {
    "id": "s02",
    "chapter": "c1",
-   "beat": "结石怎么来的：尿浓 → 晶体聚集 → 卡在输尿管",
-   "hook": "把肾“切开”看",
+   "beat": "怎么量：三步，一步一张卡",
+   "hook": "照着做就行",
    "claims": [
-    "P1",
-    "P2"
+    "B1",
+    "B2",
+    "B3"
    ],
-   "visual": "代码画的右肾剖面 + 输尿管 + 膀胱。晶体小点在下肾盏聚成结石并长大；结石移到输尿管上段卡住，红色脉动，梗阻以上肾盂肾盏扩张。",
+   "max_labels": 3,
+   "visual": "上方一排三张步骤卡依次弹出（钟 = 先歇 5 分钟；椅子 = 坐稳脚放平；手臂和袖带 = 袖带位置），讲到哪一步哪张卡高亮；下方左边是血压计图标，右边林阿姨指着步骤卡讲解。",
    "lines": [
     {
      "who": "narrator",
-     "text": "水喝得少，尿就变浓。尿里的晶体越聚越大，就成了肾结石。",
+     "text": "量之前，先安静坐五分钟。",
      "emo": "explain"
     },
     {
      "who": "narrator",
-     "text": "结石掉进输尿管卡住，就会引起剧烈的腰痛。",
-     "emo": "firm",
+     "text": "坐稳，双脚平放，不说话。",
+     "emo": "explain"
+    },
+    {
+     "who": "narrator",
+     "text": "袖带绑在上臂，下缘离肘窝两横指。",
+     "emo": "explain",
      "hold": 0.3
     }
    ],
@@ -210,115 +226,114 @@
     {
      "at": [
       0,
-      "变浓"
+      "五分钟"
      ],
-     "text": "喝水少 → 尿液浓缩"
-    },
-    {
-     "at": [
-      0,
-      "肾结石"
-     ],
-     "text": "晶体聚集成结石"
+     "text": "先安静坐 5 分钟"
     },
     {
      "at": [
       1,
-      "卡住"
+      "坐稳"
      ],
-     "text": "卡在输尿管 → 肾绞痛",
-     "big": true
+     "text": "坐稳 · 脚放平 · 不说话"
+    },
+    {
+     "at": [
+      2,
+      "两横指"
+     ],
+     "text": "袖带下缘：肘窝上两横指"
     }
    ],
    "cues": {
-    "grow": [
+    "rest": [
      0,
-     "晶体"
+     "安静"
     ],
-    "fall": [
+    "sit": [
      1,
-     "掉进"
+     "坐稳"
     ],
-    "stuck": [
-     1,
-     "卡住"
+    "cuff": [
+     2,
+     "袖带"
     ]
    },
-   "check_frames": [
-    "cue:grow+2.0",
-    "cue:stuck+1.2",
-    "end-0.5"
-   ],
    "lead": 0.3
   },
   {
    "id": "s03",
-   "chapter": "c2",
-   "beat": "预防：多喝水，每天尿量 2 升以上",
-   "hook": "办法很简单",
+   "chapter": "c1",
+   "beat": "关键一点：上臂和心脏一样高（代码画的示意图）",
+   "hook": "一条水平线说明白",
    "claims": [
-    "P3"
+    "B4"
    ],
-   "visual": "左边水壶图标弹入，右边一只量杯（代码画，刻度是短线不是数字）慢慢注到“两升”那格；小周举杯立绘弹入。",
+   "anatomy": true,
+   "visual": "代码画的示意图：坐着的人（不画五官）、前臂放在桌上、上臂绑着袖带；心脏亮起脉动圈，一条水平虚线从袖带中心长到心脏，打勾。林阿姨在右下角恍然大悟。",
    "lines": [
     {
      "who": "narrator",
-     "text": "预防结石复发，最基本的一条就是多喝水：让每天的尿量保持在两升以上。",
-     "emo": "explain"
+     "text": "还有一点很关键：上臂要和心脏一样高。",
+     "emo": "firm"
     },
     {
-     "who": "zhou",
-     "text": "原来这么简单！",
+     "who": "lin",
+     "text": "原来要先歇一歇，摆好姿势！",
      "emo": "happy",
-     "hold": 0.3
+     "hold": 0.4
     }
    ],
    "labels": [
     {
      "at": [
       0,
-      "多喝水"
+      "一样高"
      ],
-     "text": "多喝水"
-    },
-    {
-     "at": [
-      0,
-      "两升"
-     ],
-     "text": "每天尿量 2 升以上",
+     "text": "上臂中点 = 心脏高度",
      "big": true
     }
    ],
    "cues": {
-    "water": [
+    "heart": [
      0,
-     "多喝水"
+     "关键"
     ],
-    "two": [
+    "level": [
      0,
-     "两升"
+     "一样高"
     ],
     "ok": [
      1,
      "原来"
     ]
    },
+   "check_frames": [
+    "cue:heart+0.6",
+    "cue:level+1.0",
+    "end-0.6"
+   ],
    "lead": 0.3
   },
   {
    "id": "s04",
-   "chapter": "c3",
-   "beat": "危险信号：两条，立即急诊",
+   "chapter": "c2",
+   "beat": "危险信号：两条，立即叫救护车",
    "hook": "红色警报",
    "claims": [
-    "P4"
+    "R1",
+    "R2"
    ],
-   "visual": "背景转警报红闪；两块警示牌依次落下（图形叹号，无文字）。主体放舞台上半部，下面留给字卡。",
+   "visual": "背景转警报红闪；两块警示牌依次落下（图形叹号，无文字）；林阿姨捂着胸口。主体放舞台上半部，下面留给字卡。",
    "lines": [
     {
      "who": "narrator",
-     "text": "但如果腰痛的同时发烧打寒战，或者完全尿不出来，别硬扛，马上去急诊。",
+     "text": "要是血压很高，还剧烈头痛、说话不清，或者胸背剧痛、喘不上气，",
+     "emo": "urgent"
+    },
+    {
+     "who": "narrator",
+     "text": "别等，马上叫救护车。",
      "emo": "urgent",
      "hold": 0.5
     }
@@ -327,18 +342,18 @@
     {
      "at": [
       0,
-      "发烧"
+      "头痛"
      ],
-     "text": "腰痛伴发热寒战：立即急诊",
+     "text": "剧烈头痛、说话不清：叫救护车",
      "alert": true,
      "rf": 0
     },
     {
      "at": [
       0,
-      "完全"
+      "胸背"
      ],
-     "text": "完全尿不出来：立即急诊",
+     "text": "胸背剧痛、喘不上气：叫救护车",
      "alert": true,
      "rf": 1
     }
@@ -346,11 +361,11 @@
    "cues": {
     "f1": [
      0,
-     "发烧"
+     "头痛"
     ],
     "f2": [
      0,
-     "完全"
+     "胸背"
     ]
    },
    "tail": 2.2,
@@ -395,23 +410,24 @@
    "grey": "#B8B2BC",
    "steam_blue": "#CFEFFF",
    "laser": "#FF5A36",
-   "kidney": "#C8695E",
-   "kidney_dark": "#A84E46",
-   "medulla": "#E39A8C",
-   "sinus": "#F6DFA8",
-   "tube": "#F2C879",
-   "tube_dark": "#D9A44A",
-   "bladder": "#F3B8A8",
-   "crystal": "#8C6A3F",
    "home": "#EEF2F6",
    "home2": "#DDE6EE",
    "home_floor": "#C8D3DD",
    "clinic": "#F1F5FB",
    "clinic2": "#DEE8F5",
    "clinic_floor": "#C6D3E6",
-   "clinic_line": "#9FB6DA"
+   "clinic_line": "#9FB6DA",
+   "body": "#CFD8E6",
+   "body_dark": "#AEBBD0",
+   "cuff": "#7F93B2",
+   "cuff_light": "#A9B8D0",
+   "wood": "#C9A77C",
+   "wood_dark": "#B08D62",
+   "heart": "#E5484D",
+   "heart_dark": "#B4232A"
   },
-  "theme": "mint"
+  "theme": "mint",
+  "art": "黏土定格动画风格的人偶：手工软陶质感，哑光表面，有细微指纹和捏痕，造型圆润简化，头身比约 1:3，五官简洁，柔和的摄影棚布光"
  },
  "voices": {
   "_comment": "配音由用户自己录（tools/voice.py）：actor = 谁来配；desc = 嗓音和语气要求（写进台词本）",
@@ -419,9 +435,9 @@
    "actor": "（待定）",
    "desc": "亲切、专业，吐字清楚，约每秒 4.5 字"
   },
-  "zhou": {
+  "lin": {
    "actor": "（待定）",
-   "desc": "三十出头的男声，语气轻快"
+   "desc": "六十出头的女声，热心、嗓门不小"
   }
  },
  "tts": {
@@ -451,15 +467,15 @@
   "sfx": [
    {
     "scene": "s01",
-    "cue": "pain",
+    "cue": "shock",
     "dt": 0.0,
     "sfx": "thud",
-    "gain": 0.22
+    "gain": 0.2
    },
    {
     "scene": "s03",
-    "cue": "ok",
-    "dt": 0.1,
+    "cue": "level",
+    "dt": 0.5,
     "sfx": "chime",
     "gain": 0.1
    }
@@ -471,18 +487,18 @@
  "_media_note": "scenes[].media[] 视频 / 帧序列素材（intro_media / outro_media 同）：{id, src: \"assets/.../f_%04d.jpg\", frames, fps, at: [cue, 偏移], dur, loop, still}；人物默认用 3D 静帧立绘（storyboard.assets 登记 sp_*，scenes.js 用 SH.SP 画）。",
  "_credits_note": "片尾署名，每条一行；可写 {\"text\": \"...\", \"orient\": \"port\"|\"land\"} 只在某一画幅显示",
  "assets": {
-  "sp_zhou_pain": {
-   "src": "assets/lib/characters/sprites/sp_zhou_pain.png"
+  "sp_lin_worry": {
+   "src": "assets/lib/characters/sprites/sp_lin_worry.png"
   },
-  "sp_zhou_drink": {
-   "src": "assets/lib/characters/sprites/sp_zhou_drink.png"
+  "sp_lin_point": {
+   "src": "assets/lib/characters/sprites/sp_lin_point.png"
   },
-  "ic_bottle": {
-   "src": "assets/lib/props/ic_bottle.png"
+  "ic_bpmonitor": {
+   "src": "assets/lib/props/ic_bpmonitor.png"
   },
-  "fs_zhou_desk": {
-   "src": "assets/lib/scenes/fs_zhou_desk.png"
+  "fs_lin_home": {
+   "src": "assets/lib/scenes/fs_lin_home.png"
   }
  },
- "_example_note": "技能自带的样例专题，只为演示写法（满幅 3D 镜头、透明底立绘、道具图标、代码画的解剖、危险信号字卡）。选题和来源只是举例：做自己的片子时，按选题重新检索权威来源（references/sources.md），口径由用户逐条核对。"
+ "_example_note": "技能自带的样例专题，只为演示写法（满幅镜头、透明底立绘、道具图标、分步卡、代码画的示意图、危险信号字卡）。选题、来源、画风只是举例：做自己的片子时，按选题重新检索权威来源（references/sources.md），口径由用户逐条核对；画风由用户定（references/characters_3d.md）。"
 }

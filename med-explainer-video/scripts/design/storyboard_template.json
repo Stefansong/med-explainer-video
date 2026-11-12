@@ -31,7 +31,7 @@
  "width": 1080,
  "height": 1920,
  "target_seconds": 60,
- "_characters_note": "art3d = 3D 卡通定妆图（S3 用平台生图出）：必须全身（头顶到鞋底完整）、正面或 3/4 侧、自然站姿、纯色浅背景、不带场景、无文字；衣服鞋子在这张定死，之后每张姿势图都拿它当长相参考。",
+ "_characters_note": "art3d = 角色定妆图（S3 用平台生图出，画风写在 style.art）：必须全身（头顶到鞋底完整）、正面或 3/4 侧、自然站姿、纯色浅背景、不带场景、无文字；衣服鞋子在这张定死，之后每张姿势图都拿它当长相参考。",
  "characters": {
   "narrator": {
    "name": "旁白",
@@ -247,7 +247,8 @@
    "clinic_floor": "#C6D3E6",
    "clinic_line": "#9FB6DA"
   },
-  "theme": "mint"
+  "theme": "mint",
+  "art": "（画风：S3 和用户定，一段话；每张图的提示词都以它开头。现成写法见 references/characters_3d.md 第 0 节）"
  },
  "voices": {
   "_comment": "配音由用户自己录（tools/voice.py）：actor = 谁来配；desc = 嗓音和语气要求（写进台词本）",

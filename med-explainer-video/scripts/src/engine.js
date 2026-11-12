@@ -2,7 +2,7 @@
 // ENGINE.create({ SB, TL, canvas, style, art, assetBase, strict }) → { renderAt(T, {overlay}), renderFrame(T, {sub, shutter, fps}), prepare(T, span) }
 // 视频素材（storyboard 里 scene.media；片头 / 片尾素材在 SB.intro_media / SB.outro_media）按帧图片加载：逐帧渲染前先 await prepare(T)，场景里用 A.media(id) 取当前帧。
 //   帧号：at=[cue, 偏移] 起播；dur 给定时只在窗口内有效（超出片长停在最后一帧）；loop='pingpong'|'loop'|[a,b]（帧号）或 loop_s=[a,b]（秒）；still=静帧；f0 / f0_s=从第几帧 / 几秒起播；tmap 分段对时。
-// 皮克斯 3D 人物层（media 条目带 pix，本技能不带口型视频的生成流程，接口保留）：pixActive / drawPix 按 pix.layout（full / circle / card / ellipse）叠到场景上，
+// 视频人物层（media 条目带 pix，本技能不带口型视频的生成流程，接口保留）：pixActive / drawPix 按 pix.layout（full / circle / card / ellipse）叠到场景上，
 //   under=true 时经 L.bg → L.PIXBG 画在背景之上、前景之下；hide 让代码画的同一角色让位（L.HIDE，角色函数用 L.hide(who) 查：'skip' 不画 / 'faceless' 画无脸版）。
 //   只有片段帧到位时代码角色才让位：缺帧自动回退代码版。运动模糊子帧取视频帧一律按主帧时刻（MDT），否则 25 fps 的片段相邻两帧叠成重影。
 // 版式（舞台位置、片名、字卡、字幕）全部由 layout.json 决定（OV.LAYOUT，player.html 加载后 OV.setLayout）；本文件不写版式常量。
@@ -81,7 +81,7 @@ const ENGINE = {};
     // 封面：项目 scenes.js 的 SC.cover（竖屏）/ SC.cover_land（横屏）优先；没有就用模板默认 COVER.port / COVER.land（cover_default.js，文字来自 storyboard.cover）
     const coverFn = () => { const land = W > H, f = land ? (SC.cover_land || (typeof COVER !== 'undefined' && COVER.land)) : (SC.cover || (typeof COVER !== 'undefined' && COVER.port)); return f ? (cc, A) => f(cc, A.SB, { t: A.t, T: A.T, land }) : null; };
     ENGINE.coverFn = coverFn;
-    // ---------- 皮克斯 3D 人物层（storyboard media 里带 pix 的条目）：按 pix.layout 叠到原场景上；hide 让代码画的同一角色让位 ----------
+    // ---------- 视频人物层（storyboard media 里带 pix 的条目）：按 pix.layout 叠到原场景上；hide 让代码画的同一角色让位 ----------
     // pix: { layout: full|circle|card|ellipse|none（none = 不自动画，场景代码用 A.media(id) 自己画，如替换某个贴图位置）, x, y, r | w, h, rr, focus:[u,v], zoom, ring, ringW, under, fade, fadeOut, pop, punch, fit:{s, top, nofill}, leader:[x,y], shadow }
     // 条目级：hide {who: 'skip'|'faceless'}、hidePre（起播前几秒先画无脸版）、hideRest（放完后本场剩余时间继续让位）
     const pixActive = (sc, t) => { const out = { over: [], under: [], hide: null };

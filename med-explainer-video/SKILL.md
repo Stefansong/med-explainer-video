@@ -2,24 +2,24 @@
 name: med-explainer-video
 display_name: 医学科普动画短片
 display_name_en: Medical Explainer Animation
-description: 把一个医学科普选题做成 3 到 5 分钟的竖屏动画短片。流程是口径表与分镜、3D 卡通角色定妆、用户自己录配音、代码动画逐帧渲染、独立审核、出成片。Windows 和 macOS 通用，不需要 GPU 服务器。
-description_zh: 把一个医学科普选题做成 3 到 5 分钟的竖屏动画短片。流程是口径表与分镜、3D 卡通角色定妆、用户自己录配音、代码动画逐帧渲染、独立审核、出成片。Windows 和 macOS 通用，不需要 GPU 服务器。
-description_en: Turn a medical-education topic into a 3 to 5 minute vertical animated short. Claims table and storyboard, 3D cartoon character sheets, user-recorded voiceover, code-driven animation rendered frame by frame, independent review, final video. Works on Windows and macOS, no GPU server needed.
+description: 把一个医学科普选题做成 3 到 5 分钟的竖屏动画短片。流程是口径表与分镜、角色定妆（画风自选）、用户自己录配音、代码动画逐帧渲染、独立审核、出成片。Windows 和 macOS 通用，不需要 GPU 服务器。
+description_zh: 把一个医学科普选题做成 3 到 5 分钟的竖屏动画短片。流程是口径表与分镜、角色定妆（画风自选）、用户自己录配音、代码动画逐帧渲染、独立审核、出成片。Windows 和 macOS 通用，不需要 GPU 服务器。
+description_en: Turn a medical-education topic into a 3 to 5 minute vertical animated short. Claims table and storyboard, character sheets in an art style you choose, user-recorded voiceover, code-driven animation rendered frame by frame, independent review, final video. Works on Windows and macOS, no GPU server needed.
 version: 1.0.0
 author: （作者名）
 examples_zh:
-  - 帮我做一个讲高血压在家怎么量的科普动画短片，给中老年人看
+  - 帮我做一个讲老人在家怎么防跌倒的科普动画短片，给中老年人看
   - 把这份儿童发烧护理的科普稿改编成竖屏动画，我自己配音
   - 我录好音了，放在 audio/recordings 里，接着往下做
 examples_en:
-  - Make a short animated explainer about home blood pressure monitoring for older adults
+  - Make a short animated explainer about preventing falls at home for older adults
   - Turn this child fever care handout into a vertical animation; I will record the voiceover myself
   - My recordings are in audio/recordings, please continue
 ---
 
 # 医学科普动画短片
 
-把一个医学科普选题做成竖屏 1080×1920、3 到 5 分钟的动画短片：有剧情、有角色、口径严谨。画面是代码动画（Canvas 逐帧渲染），人物和道具用平台生图出的 3D 卡通静帧，解剖示意由你（AI）用代码亲手画，配音由用户自己录，中文字幕和字卡由叠字层统一画。
+把一个医学科普选题做成竖屏 1080×1920、3 到 5 分钟的动画短片：有剧情、有角色、口径严谨。画面是代码动画（Canvas 逐帧渲染），人物和道具用平台生图出的立体人偶静帧（画风由用户定，样例是黏土定格风），解剖示意由你（AI）用代码亲手画，配音由用户自己录，中文字幕和字卡由叠字层统一画。
 
 下文 `$SKILL` 指本技能目录（这个 SKILL.md 所在的目录）。所有命令都用 `python "$SKILL/scripts/pipeline.py" …`，专题目录作为参数传进去。
 
@@ -29,7 +29,7 @@ examples_en:
 - **医学内容由用户负责把关**：口径表（每条医学表述 + 出处）必须由用户（最好是执业医生）确认。你只能比原文写得更简略，不能更绝对；不确定的标出来问，不要编。
 - **三个 HARD 停点必须停下等用户亲口确认**：S0 口径表 + 节拍表、S3 角色定稿与配音分工、S6a 动画预演。流水线读 `storyboard.status.{s0,s3,s6a}.confirmed`，没确认就拒绝往下跑。**绝不能替用户把 confirmed 改成 true**，只有用户在对话里明确说“确认”之后，才按用户原话写 `{"confirmed": true, "by": "用户", "date": "YYYY-MM-DD", "note": "原话"}`。
 - **配音由用户录**。你负责出台词本、导入录音、核对回读结果。合成声只能当草稿（`voice --draft`，对节奏用），正式成片必须是真人录音，流水线会拦。
-- **解剖结构不交给生图模型**：器官、管道、剖面由你在 `src/anat.js` / `src/scenes.js` 里用代码画，并逐项核对科学性（见 `references/anatomy.md`）。生图只用于 3D 人物、场景和道具图标。
+- **解剖结构不交给生图模型**：器官、管道、剖面由你在 `src/anat.js` / `src/scenes.js` 里用代码画，并逐项核对科学性（见 `references/anatomy.md`）。生图只用于人物、场景和道具图标。
 - **模型能力**：写场景代码、画解剖、看图核对对模型要求高，建议用户选当前可用模型里最强、且能看图的那个；轻量模型容易写出跑不通或很空的画面。
 - **画面里零文字**：所有中文由叠字层（字幕、字卡、片名、片尾）负责；生图提示词写明“无文字、无水印”。
 - 不画生殖器等敏感画面；不出现商品名、医院名、联系方式；结尾不承诺疗效。
@@ -50,7 +50,7 @@ python "$SKILL/scripts/pipeline.py" timeline <工作目录>/demo --estimate
 python "$SKILL/scripts/pipeline.py" animatic <工作目录>/demo
 ```
 
-得到一条 45 秒的无声预演 `render/demo_preview_v1.mp4`（约 1 分钟）。样例的选题（肾结石）只是举例，写法适用于任何选题。样例的 `design/storyboard_demo.json`、`src/scenes.js`、`src/anat.js` 就是标准写法：满幅 3D 镜头、透明底立绘、道具图标、代码画的解剖、危险信号字卡各示范了一次。**写新片时照着样例改，不要从零发明写法**；函数用法查 `references/api.md`。
+得到一条 45 秒的无声预演 `render/demo_preview_v1.mp4`（约 1 分钟）。样例的选题（在家量血压）和画风（黏土定格）只是举例，写法适用于任何选题。样例的 `design/storyboard_demo.json`、`src/scenes.js`、`src/anat.js` 就是标准写法：满幅镜头、透明底立绘、道具图标、分步卡、代码画的示意图、危险信号字卡各示范了一次。**写新片时照着样例改，不要从零发明写法**；函数用法查 `references/api.md`。
 
 ## 流程
 
@@ -99,10 +99,11 @@ python $P wait <专题>                      # 等最多 90 秒，打印最近�
 4. 删掉模板里用不上的占位角色、占位场景和占位口径，跑 `python $P check <专题>` 把错误清零。
 5. `python $P s0 <专题>` 生成修订稿（md + Word），把口径表、危险信号、每场节拍交给用户逐条看。**停下等用户确认 S0。**
 
-### 2. S3：3D 角色、场景、道具
+### 2. S3：画风、角色、场景、道具
 
 按 `references/characters_3d.md`：
 
+0. 先和用户定**画风**，写进 storyboard 的 `style.art`（`references/characters_3d.md` 第 0 节有三种现成写法）；之后每张图的提示词都以它开头。
 1. 每个角色先出一张**全身定妆图**（头顶到鞋底、纯色背景、无文字），用户选定后存 `assets/lib/characters/<who>/<who>_v1_c<n>.png`，登记 `characters[who].art3d`。之后每张姿势图都拿定妆图当参考，保证长相、衣服、鞋一致。
 2. 反复出现的地点各出一张空场景图（无人物），登记 `places`。
 3. 立绘和道具图标用**纯品红 #FF00FF 底**出图，再用 `python "$SKILL/scripts/tools/cutout.py" <图片> sp_<角色>_<动作>`（图标用 `ic_<物品>`）抠成透明底并登记进 `storyboard.assets`。
@@ -145,7 +146,7 @@ python $P wait <专题>                      # 等最多 90 秒，打印最近�
 3. 字幕时刻吸附波形开口点；whisper 的中文词级时间只作参考。
 4. 审核看成片 mp4 抽出的帧，不只看开发渲染器；两道审核由独立审核员做，作者自己不审自己。
 5. 定稿素材（定妆图、场景图、已批准的解剖画法）一经确认不覆盖，改动升版本。
-6. 人物只用 3D（满幅静帧或透明底立绘），不和 2D 手绘小人混搭，不用画中画式贴图卡片。
+6. 全片一种画风：人物只以满幅静帧或透明底立绘出现，所有生成的图用同一段画风描述；不把生成的人物和代码画的小人混搭，不用画中画式贴图卡片。
 7. 成片片头有“AI 生成内容”标识（叠字层自动画，符合 GB 45438—2025），片尾写明哪些素材由 AI 生成。
 8. 成片审核通过才清理；清理只移进回收站，清空由用户自己决定。
 9. 报错先读报错：流水线的错误信息会说哪个文件第几行、为什么、怎么改。照着改，不要绕过检查，也不要删掉报错的那一场了事。
