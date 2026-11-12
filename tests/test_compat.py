@@ -4,7 +4,8 @@
   1. 3.10+ 的语法（match 语句、带括号的多个 with 项等）：ast.parse(feature_version=(3, 9))
   2. 3.12 才允许的 f-string 写法：花括号里用了和外层相同的引号、或带反斜杠（旧版直接 SyntaxError）
   python tests/test_compat.py"""
-import ast, glob, io, sys, tokenize
+import ast, io, subprocess, sys, tokenize
+if not sys.flags.utf8_mode: sys.exit(subprocess.call([sys.executable, '-X', 'utf8', *sys.argv]))   # 控制台不是 UTF-8（英文 / 中文 Windows）时打印中文会报错：用 UTF-8 模式重跑自己
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 FILES = [ROOT / 'med-explainer-video/scripts/pipeline.py', ROOT / 'med-explainer-video/scripts/setup_env.py'] + sorted((ROOT / 'med-explainer-video/scripts/tools').glob('*.py')) + sorted((ROOT / 'tests').glob('*.py'))

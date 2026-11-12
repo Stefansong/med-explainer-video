@@ -2,6 +2,7 @@
 """错误提示测试：故意把分镜和场景代码写错，确认流水线会拦下来，并且提示里说清了是什么错（不是一屏报错栈）。
   python tests/test_errors.py     需要先跑过 pipeline.py setup"""
 import json, os, re, subprocess, sys, tempfile, shutil
+if not sys.flags.utf8_mode: sys.exit(subprocess.call([sys.executable, '-X', 'utf8', *sys.argv]))   # 控制台不是 UTF-8（英文 / 中文 Windows）时打印中文会报错：用 UTF-8 模式重跑自己
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent; PIPE = ROOT / 'med-explainer-video/scripts/pipeline.py'
 WORK = Path(os.environ.get('SMOKE_DIR') or tempfile.mkdtemp(prefix='kepu_err_')) / 'errs'; shutil.rmtree(WORK, ignore_errors=True); WORK.mkdir(parents=True)

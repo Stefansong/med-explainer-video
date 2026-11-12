@@ -3,6 +3,7 @@
   python tests/smoke.py [--no-voice]
 审核报告和 HARD 点确认在这里由测试脚本代写，只为验证流水线能跑通，不代表真实审核。录音用 edge-tts 合成（需要联网；失败就跳过配音部分并在最后标出）。"""
 import json, os, shutil, subprocess, sys, tempfile, time
+if not sys.flags.utf8_mode: sys.exit(subprocess.call([sys.executable, '-X', 'utf8', *sys.argv]))   # 控制台不是 UTF-8（英文 / 中文 Windows）时打印中文会报错：用 UTF-8 模式重跑自己
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent; SK = ROOT / 'med-explainer-video'; PIPE = SK / 'scripts/pipeline.py'; TOOLS = SK / 'scripts/tools'
 WORK = Path(os.environ.get('SMOKE_DIR') or tempfile.mkdtemp(prefix='kepu_smoke_')); P = WORK / 'demo'

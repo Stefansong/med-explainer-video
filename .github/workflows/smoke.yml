@@ -21,6 +21,8 @@ jobs:
       - name: Test-only dependency (synthetic recordings)
         run: python -m pip install edge-tts
       - name: Old-Python compatibility (syntax)
+        env:
+          PYTHONUTF8: '1'
         run: python tests/test_compat.py
       - name: Smoke test
         env:
